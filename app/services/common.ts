@@ -1,15 +1,20 @@
 import fs from "fs/promises";
-import { AUTH_TOKEN, GET_LICENSEE_URL, COURT_CLUB_IDS, GET_SESSION_URL, CUSTOM_ID, COORDINATES } from "./config";
+import { GET_LICENSEE_URL, COURT_CLUB_IDS, GET_SESSION_URL, CUSTOM_ID, COORDINATES } from "./config";
 import { Licensee, Session, DayPlanning, CourtPlanning, TimeSlot } from "./types.js";
+import path from 'path';
+import { TEAMR_CONFIG } from "../config/teamr";
 
-const LICENCIES_FILE = "allLicencies.json";
+// Définir le chemin relatif correct
+const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
+// ou
+// const LICENCIES_FILE = "./allLicencies.json"; // si le fichier est dans le même dossier
 
 // Fonction pour charger ou récupérer les licenciés
 export async function getLicencies(): Promise<Map<string, { firstName: string; lastName: string }>> {
     try {
-        const data = await fs.readFile(LICENCIES_FILE, "utf-8");
         console.log("📂 Chargement des licenciés depuis le fichier local...");
-
+        const data = await fs.readFile(LICENCIES_FILE, "utf-8");
+       
         const licenseeMap = new Map<string, { firstName: string; lastName: string }>();
 
         JSON.parse(data).forEach((licencie: Licensee) => {
@@ -35,6 +40,9 @@ async function fetchAllLicensees(): Promise<Map<string, { firstName: string; las
     const firstClubId = Object.values(COURT_CLUB_IDS)[0];
     const url = `${GET_LICENSEE_URL}/${firstClubId}`;
 
+    console.log("USED API KEY : ", TEAMR_CONFIG.API_KEY);
+    console.log("USED BASE URL : ", TEAMR_CONFIG.BASE_URL);
+    
     const response = await fetch(url, {
         method: "GET",
         headers: {
@@ -42,7 +50,7 @@ async function fetchAllLicensees(): Promise<Map<string, { firstName: string; las
             "Accept": "application/json, text/plain, */*",
             "User-Agent": "HappyPeople/201 CFNetwork/1568.200.51 Darwin/24.1.0",
             "Accept-Language": "fr-FR,fr;q=0.9",
-            "Authorization": AUTH_TOKEN
+            "Authorization": `Bearer ${TEAMR_CONFIG.API_KEY}`
         }
     });
 
@@ -66,6 +74,8 @@ async function fetchAllLicensees(): Promise<Map<string, { firstName: string; las
 
 // Fonction pour récupérer les sessions d'un court donné
 export async function fetchSessionsForCourt(clubId: string, date: string): Promise<Session[]> {
+    console.log("USED API KEY : ", TEAMR_CONFIG.API_KEY);
+    console.log("USED BASE URL : ", TEAMR_CONFIG.BASE_URL);
     const response = await fetch(GET_SESSION_URL, {
         method: "POST",
         headers: {
@@ -74,7 +84,7 @@ export async function fetchSessionsForCourt(clubId: string, date: string): Promi
             "User-Agent": "HappyPeople/201 CFNetwork/1568.200.51 Darwin/24.1.0",
             "Accept": "application/json, text/plain, */*",
             "Accept-Language": "fr-FR,fr;q=0.9",
-            "Authorization": AUTH_TOKEN
+            "Authorization": TEAMR_CONFIG.API_KEY
         },
         body: JSON.stringify({
             filters: { clubId, coordinates: COORDINATES, date },

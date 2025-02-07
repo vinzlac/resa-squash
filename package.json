@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "prod": "TEAMR_API_KEY=$(cat .env.production | grep TEAMR_API_KEY | cut -d '=' -f2) NODE_ENV=production npm run build && TEAMR_API_KEY=$(cat .env.production | grep TEAMR_API_KEY | cut -d '=' -f2) NODE_ENV=production npm run start",
+    "build-prod": "TEAMR_API_KEY=$(cat .env.production | grep TEAMR_API_KEY | cut -d '=' -f2) NODE_ENV=production npm run build",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
