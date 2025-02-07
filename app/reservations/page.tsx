@@ -17,7 +17,7 @@ function ReservationsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  const date = searchParams.get('date');
+  const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
 
   // Formatage de la date
   const formattedDate = date ? format(new Date(date), "EEEE d MMMM yyyy", { locale: fr }) : '';
