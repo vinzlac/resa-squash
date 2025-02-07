@@ -1,25 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Reservation } from '@/app/types/reservation';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 interface ReservationByTimeSlot {
   time: string;
   participants: string[];
 }
 
-export default function Reservations() {
+function ReservationsContent() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const date = searchParams.get('date');
 
   useEffect(() => {
     const fetchReservations = async () => {
       try {
-        // Obtenir la date du jour au format YYYY-MM-DD
-        const today = new Date().toISOString().split('T')[0];
-        const response = await fetch(`/api/reservations?date=${today}`);
+        const response = await fetch(`/api/reservations?date=${date}`);
         
         if (!response.ok) {
           throw new Error('Erreur lors de la récupération des réservations');
@@ -35,7 +36,7 @@ export default function Reservations() {
     };
 
     fetchReservations();
-  }, []);
+  }, [date]);
 
   // Regrouper les réservations par terrain
   const reservationsByCourtNumber: { [courtNumber: number]: ReservationByTimeSlot[] } = {};
@@ -118,5 +119,13 @@ export default function Reservations() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Reservations() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <ReservationsContent />
+    </Suspense>
   );
 } 
