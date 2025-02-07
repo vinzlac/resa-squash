@@ -32,9 +32,18 @@ export default function Reservations() {
     fetchReservations();
   }, []);
 
+  // Regrouper les réservations par terrain
+  const reservationsByCourtNumber = reservations.reduce((acc, reservation) => {
+    if (!acc[reservation.court]) {
+      acc[reservation.court] = [];
+    }
+    acc[reservation.court].push(reservation);
+    return acc;
+  }, {} as { [courtNumber: number]: Reservation[] });
+
   return (
     <div className="min-h-screen p-8 pb-20 sm:p-20">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <Link
           href="/"
           className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-8"
@@ -60,37 +69,33 @@ export default function Reservations() {
             Aucune réservation pour aujourd&apos;hui
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Heure
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Terrain
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Réservé par
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
-                {reservations.map((reservation) => (
-                  <tr key={reservation.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {reservation.time}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      Terrain {reservation.court}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {reservation.user}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[1, 2, 3, 4].map((courtNumber) => (
+              <div key={courtNumber} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                <div className="px-4 py-5 sm:px-6 bg-gray-50 dark:bg-gray-700">
+                  <h2 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                    Terrain {courtNumber}
+                  </h2>
+                </div>
+                <div className="border-t border-gray-200 dark:border-gray-600">
+                  <dl>
+                    {reservationsByCourtNumber[courtNumber]?.map((reservation) => (
+                      <div
+                        key={reservation.id}
+                        className="bg-gray-50 dark:bg-gray-700 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+                      >
+                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          {reservation.time}
+                        </dt>
+                        <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">
+                          {reservation.user}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
