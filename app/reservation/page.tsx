@@ -1,8 +1,10 @@
+import Link from 'next/link';
+
 export default function Reservation() {
   return (
     <div className="min-h-screen p-8 pb-20 sm:p-20">
       <div className="max-w-2xl mx-auto">
-        <a 
+        <Link
           href="/"
           className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-8"
         >
@@ -10,7 +12,7 @@ export default function Reservation() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
           Retour
-        </a>
+        </Link>
 
         <h1 className="text-3xl font-bold mb-8">Réservation de Terrain</h1>
 
