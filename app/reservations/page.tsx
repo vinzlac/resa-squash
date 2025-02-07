@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from 'react';
 import { Reservation } from '@/app/types/reservation';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface ReservationByTimeSlot {
   time: string;
@@ -16,6 +18,9 @@ function ReservationsContent() {
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const date = searchParams.get('date');
+
+  // Formatage de la date
+  const formattedDate = date ? format(new Date(date), "EEEE d MMMM yyyy", { locale: fr }) : '';
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -73,7 +78,9 @@ function ReservationsContent() {
           Retour
         </Link>
 
-        <h1 className="text-3xl font-bold mb-8">Réservations du Jour</h1>
+        <h1 className="text-3xl font-bold mb-8">
+          Réservations pour la date du {formattedDate}
+        </h1>
 
         {loading ? (
           <div className="flex justify-center items-center h-40">
