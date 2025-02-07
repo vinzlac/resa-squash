@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import { Reservation } from '@/app/types/reservation';
 import Link from 'next/link';
 
+interface ReservationByTimeSlot {
+  time: string;
+  participants: string[];
+}
+
 export default function Reservations() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,13 +38,26 @@ export default function Reservations() {
   }, []);
 
   // Regrouper les réservations par terrain
-  const reservationsByCourtNumber = reservations.reduce((acc, reservation) => {
-    if (!acc[reservation.court]) {
-      acc[reservation.court] = [];
+  const reservationsByCourtNumber: { [courtNumber: number]: ReservationByTimeSlot[] } = {};
+
+  reservations.forEach((reservation) => {
+    if (!reservationsByCourtNumber[reservation.court]) {
+      reservationsByCourtNumber[reservation.court] = [];
     }
-    acc[reservation.court].push(reservation);
-    return acc;
-  }, {} as { [courtNumber: number]: Reservation[] });
+
+    const existingTimeSlot = reservationsByCourtNumber[reservation.court].find(
+      (slot) => slot.time === reservation.time
+    );
+
+    if (existingTimeSlot) {
+      existingTimeSlot.participants.push(reservation.user);
+    } else {
+      reservationsByCourtNumber[reservation.court].push({
+        time: reservation.time,
+        participants: [reservation.user],
+      });
+    }
+  });
 
   return (
     <div className="min-h-screen p-8 pb-20 sm:p-20">
@@ -79,16 +97,16 @@ export default function Reservations() {
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-600">
                   <dl>
-                    {reservationsByCourtNumber[courtNumber]?.map((reservation) => (
+                    {reservationsByCourtNumber[courtNumber]?.map((timeSlot) => (
                       <div
-                        key={reservation.id}
+                        key={timeSlot.time}
                         className="bg-gray-50 dark:bg-gray-700 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
                       >
                         <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          {reservation.time}
+                          {timeSlot.time}
                         </dt>
                         <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">
-                          {reservation.user}
+                          {timeSlot.participants.join(', ')}
                         </dd>
                       </div>
                     ))}
