@@ -11,6 +11,7 @@ export default function Home() {
   // Log des variables d'environnement
 
   console.log("Environment variables in Home:");
+  console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("DATABASE_TYPE:", process.env.DATABASE_TYPE);
   console.log("POSTGRES_USER:", process.env.POSTGRES_USER);
   console.log("POSTGRES_HOST:", process.env.POSTGRES_HOST);
