@@ -56,11 +56,13 @@ function ReservationsContent() {
     );
 
     if (existingTimeSlot) {
-      existingTimeSlot.participants.push(reservation.user);
+      if (!reservation.available && reservation.user) {
+        existingTimeSlot.participants.push(reservation.user);
+      }
     } else {
       reservationsByCourtNumber[reservation.court].push({
         time: reservation.time,
-        participants: [reservation.user],
+        participants: reservation.available ? ['Disponible'] : reservation.user ? [reservation.user] : [],
       });
     }
   });
@@ -113,8 +115,14 @@ function ReservationsContent() {
                         <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
                           {timeSlot.time}
                         </dt>
-                        <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">
-                          {timeSlot.participants.join(', ')}
+                        <dd className="mt-1 text-sm sm:mt-0 sm:col-span-2">
+                          {timeSlot.participants[0] === 'Disponible' ? (
+                            <span className="text-green-600 dark:text-green-400">Disponible</span>
+                          ) : (
+                            <span className="text-gray-900 dark:text-white">
+                              {timeSlot.participants.join(', ')}
+                            </span>
+                          )}
                         </dd>
                       </div>
                     ))}

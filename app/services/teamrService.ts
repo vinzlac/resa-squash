@@ -47,7 +47,8 @@ class TeamrService {
       court: parseInt(teamrReservation.courtId),
       time: this.formatTime(teamrReservation.startTime),
       user: teamrReservation.userName,
-      date: this.formatDate(teamrReservation.startTime)
+      date: this.formatDate(teamrReservation.startTime),
+      available: teamrReservation.status === 'available'
     };
   }
 
@@ -59,14 +60,25 @@ class TeamrService {
 
       planning.courts.forEach(court => {
         court.slots.forEach(slot => {
-          if (!slot.isAvailable) {
+          if (slot.isAvailable) {
+            // Crée une réservation pour un slot disponible
+            reservations.push({
+              id: parseInt(slot.sessionId),
+              court: parseInt(court.courtNumber),
+              time: slot.time,
+              date: planning.date,
+              available: true
+            });
+          } else {
+            // Crée une réservation pour chaque participant
             slot.participants.forEach(participant => {
               reservations.push({
                 id: parseInt(slot.sessionId),
                 court: parseInt(court.courtNumber),
                 time: slot.time,
                 user: `${participant.firstName} ${participant.lastName}`,
-                date: planning.date
+                date: planning.date,
+                available: false
               });
             });
           }
