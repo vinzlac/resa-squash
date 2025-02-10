@@ -48,6 +48,21 @@ export default function Home() {
           <p className="text-xs mt-1">Environnement : {environment}</p>
         </div>
       </footer>
+
+      <div className="space-y-4">
+        <Link
+          href="/reservations"
+          className="block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center"
+        >
+          Voir les réservations
+        </Link>
+        <Link
+          href="/settings"
+          className="block px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-center"
+        >
+          Paramètres
+        </Link>
+      </div>
     </div>
   );
 }
