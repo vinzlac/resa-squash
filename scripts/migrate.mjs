@@ -3,6 +3,12 @@ import fs from 'fs';
 import path from 'path';
 
 async function migrate() {
+  // Ne pas exécuter en local
+  if (process.env.DATABASE_TYPE !== 'vercel') {
+    console.log('Skipping migration in local environment');
+    return;
+  }
+
   try {
     // Lire le contenu du fichier SQL
     const sqlContent = fs.readFileSync(
