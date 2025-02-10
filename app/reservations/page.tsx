@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { Reservation } from '@/app/types/reservation';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { format, addDays, subDays } from 'date-fns';
+import { format, addDays, subDays, isBefore, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 interface ReservationByTimeSlot {
@@ -24,6 +24,8 @@ function ReservationsContent() {
 
   const previousDate = format(subDays(new Date(date), 1), 'yyyy-MM-dd');
   const nextDate = format(addDays(new Date(date), 1), 'yyyy-MM-dd');
+
+  const isDatePassed = isBefore(startOfDay(new Date(date)), startOfDay(new Date()));
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -73,6 +75,16 @@ function ReservationsContent() {
   return (
     <div className="min-h-screen p-8 pb-20 sm:p-20">
       <div className="max-w-7xl mx-auto">
+        <Link
+          href="/"
+          className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Retour à l'accueil
+        </Link>
+
         <div className="flex items-center justify-between mb-8">
           <Link
             href={`/reservations?date=${previousDate}`}
@@ -128,7 +140,11 @@ function ReservationsContent() {
                         </dt>
                         <dd className="mt-1 text-sm sm:mt-0 sm:col-span-2">
                           {timeSlot.participants[0] === 'Disponible' ? (
-                            <span className="text-green-600 dark:text-green-400">Disponible</span>
+                            isDatePassed ? (
+                              <span className="text-gray-500 dark:text-gray-400">Personne</span>
+                            ) : (
+                              <span className="text-green-600 dark:text-green-400">Disponible</span>
+                            )
                           ) : (
                             <span className="text-gray-900 dark:text-white">
                               {timeSlot.participants.join(', ')}
