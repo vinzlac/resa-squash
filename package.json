@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "init-db": "node scripts/init-db.mjs"
+    "init-db": "node scripts/init-db.mjs",
+    "postbuild": "node scripts/migrate.mjs"
   },
   "dependencies": {
     "@vercel/postgres": "^0.5.1",

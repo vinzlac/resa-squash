@@ -1,6 +1,8 @@
-import { cache } from 'react';
+import { sql as vercelSql } from '@vercel/postgres';
 import pg from 'pg';
+import { cache } from 'react';
 
+// Configuration pour PostgreSQL local
 const pool = new pg.Pool({
   user: process.env.POSTGRES_USER,
   host: process.env.POSTGRES_HOST,
@@ -9,56 +11,57 @@ const pool = new pg.Pool({
   port: 5432,
 });
 
-export async function createFavoritesTable() {
-  const client = await pool.connect();
-  try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS favorites (
-        id SERIAL PRIMARY KEY,
-        user_id VARCHAR(255) NOT NULL,
-        licensee_id VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(user_id, licensee_id)
-      );
-    `);
-  } finally {
-    client.release();
+// Fonction utilitaire pour exécuter des requêtes SQL
+async function executeQuery(query: string, params: Array<string | number> = []) {
+  if (process.env.DATABASE_TYPE === 'vercel') {
+    // Utiliser @vercel/postgres
+    const result = await vercelSql.query(query, params);
+    return result.rows;
+  } else {
+    // Utiliser pg pour la base locale
+    const client = await pool.connect();
+    try {
+      const result = await client.query(query, params);
+      return result.rows;
+    } finally {
+      client.release();
+    }
   }
 }
 
 export const getFavorites = cache(async (userId: string) => {
-  const client = await pool.connect();
   try {
-    const { rows } = await client.query(
+    const rows = await executeQuery(
       'SELECT licensee_id FROM favorites WHERE user_id = $1',
       [userId]
     );
     return rows.map(row => row.licensee_id);
-  } finally {
-    client.release();
+  } catch (error) {
+    console.error('Error fetching favorites:', error);
+    throw error;
   }
 });
 
 export async function addFavorite(userId: string, licenseeId: string) {
-  const client = await pool.connect();
   try {
-    await client.query(
+    await executeQuery(
       'INSERT INTO favorites (user_id, licensee_id) VALUES ($1, $2) ON CONFLICT (user_id, licensee_id) DO NOTHING',
       [userId, licenseeId]
     );
-  } finally {
-    client.release();
+  } catch (error) {
+    console.error('Error adding favorite:', error);
+    throw error;
   }
 }
 
 export async function removeFavorite(userId: string, licenseeId: string) {
-  const client = await pool.connect();
   try {
-    await client.query(
+    await executeQuery(
       'DELETE FROM favorites WHERE user_id = $1 AND licensee_id = $2',
       [userId, licenseeId]
     );
-  } finally {
-    client.release();
+  } catch (error) {
+    console.error('Error removing favorite:', error);
+    throw error;
   }
 } 
