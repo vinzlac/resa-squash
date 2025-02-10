@@ -86,18 +86,6 @@ function FavoritesContent() {
     favorites.includes(licensee.user[0]._id)
   );
 
-  const getSortedLicensees = () => {
-    return getFilteredLicensees()
-      .sort((a, b) => {
-        const aValue = a.user[0][sortField].toLowerCase();
-        const bValue = b.user[0][sortField].toLowerCase();
-        return sortDirection === 'asc' 
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      })
-      .slice(0, 10); // Limite à 10 résultats
-  };
-
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
