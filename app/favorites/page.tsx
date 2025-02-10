@@ -100,6 +100,52 @@ function FavoritesContent() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
             <div className="px-4 py-5 sm:px-6 bg-gray-50 dark:bg-gray-700">
               <h2 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                Vos favoris ({getFavoriteLicensees().length})
+              </h2>
+            </div>
+
+            <div className="p-4">
+              <div className="space-y-2">
+                {getFavoriteLicensees().map(licensee => (
+                  <div
+                    key={licensee.user[0]._id}
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded"
+                  >
+                    <span className="text-gray-900 dark:text-white">
+                      {licensee.user[0].firstName} {licensee.user[0].lastName}
+                    </span>
+                    <button
+                      onClick={() => handleToggleFavorite(licensee.user[0]._id)}
+                      className="p-2 rounded text-red-500 hover:text-red-600"
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                {getFavoriteLicensees().length === 0 && (
+                  <div className="text-center text-gray-500 dark:text-gray-400 p-4">
+                    Aucun favori sélectionné
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div className="px-4 py-5 sm:px-6 bg-gray-50 dark:bg-gray-700">
+              <h2 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
                 Sélection des favoris
               </h2>
             </div>
@@ -157,52 +203,6 @@ function FavoritesContent() {
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-            <div className="px-4 py-5 sm:px-6 bg-gray-50 dark:bg-gray-700">
-              <h2 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                Vos favoris ({getFavoriteLicensees().length})
-              </h2>
-            </div>
-
-            <div className="p-4">
-              <div className="space-y-2">
-                {getFavoriteLicensees().map(licensee => (
-                  <div
-                    key={licensee.user[0]._id}
-                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded"
-                  >
-                    <span className="text-gray-900 dark:text-white">
-                      {licensee.user[0].firstName} {licensee.user[0].lastName}
-                    </span>
-                    <button
-                      onClick={() => handleToggleFavorite(licensee.user[0]._id)}
-                      className="p-2 rounded text-red-500 hover:text-red-600"
-                    >
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-                {getFavoriteLicensees().length === 0 && (
-                  <div className="text-center text-gray-500 dark:text-gray-400 p-4">
-                    Aucun favori sélectionné
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </div>
