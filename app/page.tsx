@@ -32,30 +32,7 @@ export default function Home() {
       </header>
 
       <main className="w-full max-w-4xl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Link
-            href="/reservation"
-            className="flex flex-col items-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-          >
-            <svg
-              className="w-12 h-12 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-            <h2 className="mt-4 text-xl font-semibold">Réserver un terrain</h2>
-            <p className="mt-2 text-gray-600 dark:text-gray-400 text-center">
-              Réservez un terrain de squash pour votre prochaine partie
-            </p>
-          </Link>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Link
             href={`/reservations?date=${today}`}
             className="flex flex-col items-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow"
@@ -74,7 +51,7 @@ export default function Home() {
               />
             </svg>
             <h2 className="mt-4 text-xl font-semibold">
-              Liste des réservations
+              Réservations
             </h2>
             <p className="mt-2 text-gray-600 dark:text-gray-400 text-center">
               Consultez les réservations du jour

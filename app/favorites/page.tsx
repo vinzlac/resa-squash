@@ -4,12 +4,17 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Licensee } from '@/app/types/licensee';
 
+type SortDirection = 'asc' | 'desc';
+type SortField = 'firstName' | 'lastName';
+
 function FavoritesContent() {
   const [licensees, setLicensees] = useState<Licensee[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<SortField>('lastName');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   // Utilisez un ID utilisateur temporaire pour le développement
   const userId = "default-user"; // À remplacer par l'authentification réelle
@@ -80,6 +85,27 @@ function FavoritesContent() {
   const getFavoriteLicensees = () => licensees.filter(licensee => 
     favorites.includes(licensee.user[0]._id)
   );
+
+  const getSortedLicensees = () => {
+    return getFilteredLicensees()
+      .sort((a, b) => {
+        const aValue = a.user[0][sortField].toLowerCase();
+        const bValue = b.user[0][sortField].toLowerCase();
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      })
+      .slice(0, 10); // Limite à 10 résultats
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   return (
     <div className="min-h-screen p-8 pb-20 sm:p-20">
@@ -168,39 +194,79 @@ function FavoritesContent() {
                   {errorMessage}
                 </div>
               ) : (
-                <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                  {getFilteredLicensees().map(licensee => (
-                    <div
-                      key={licensee.user[0]._id}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded"
+                <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-4 mb-4 font-semibold sticky top-0 bg-white dark:bg-gray-800 z-10">
+                    <button 
+                      onClick={() => handleSort('firstName')}
+                      className="flex items-center justify-between px-3 py-2 bg-gray-100 dark:bg-gray-600 rounded"
                     >
-                      <span className="text-gray-900 dark:text-white">
-                        {licensee.user[0].firstName} {licensee.user[0].lastName}
-                      </span>
-                      <button
-                        onClick={() => handleToggleFavorite(licensee.user[0]._id)}
-                        className={`p-2 rounded ${
-                          favorites.includes(licensee.user[0]._id)
-                            ? 'text-yellow-500 hover:text-yellow-600'
-                            : 'text-gray-400 hover:text-gray-500'
-                        }`}
-                      >
-                        <svg
-                          className="w-6 h-6"
-                          fill={favorites.includes(licensee.user[0]._id) ? 'currentColor' : 'none'}
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                          />
+                      <span>Prénom</span>
+                      {sortField === 'firstName' && (
+                        <svg className={`w-4 h-4 ${sortDirection === 'desc' ? 'transform rotate-180' : ''}`} 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                         </svg>
-                      </button>
-                    </div>
-                  ))}
+                      )}
+                    </button>
+                    <button 
+                      onClick={() => handleSort('lastName')}
+                      className="flex items-center justify-between px-3 py-2 bg-gray-100 dark:bg-gray-600 rounded"
+                    >
+                      <span>Nom</span>
+                      {sortField === 'lastName' && (
+                        <svg className={`w-4 h-4 ${sortDirection === 'desc' ? 'transform rotate-180' : ''}`} 
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+
+                  {getFilteredLicensees()
+                    .sort((a, b) => {
+                      const aValue = a.user[0][sortField].toLowerCase();
+                      const bValue = b.user[0][sortField].toLowerCase();
+                      return sortDirection === 'asc' 
+                        ? aValue.localeCompare(bValue)
+                        : bValue.localeCompare(aValue);
+                    })
+                    .map(licensee => (
+                      <div
+                        key={licensee.user[0]._id}
+                        className="grid grid-cols-2 gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded items-center"
+                      >
+                        <span className="text-gray-900 dark:text-white">
+                          {licensee.user[0].firstName}
+                        </span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-900 dark:text-white">
+                            {licensee.user[0].lastName}
+                          </span>
+                          <button
+                            onClick={() => handleToggleFavorite(licensee.user[0]._id)}
+                            className={`p-2 rounded ${
+                              favorites.includes(licensee.user[0]._id)
+                                ? 'text-yellow-500 hover:text-yellow-600'
+                                : 'text-gray-400 hover:text-gray-500'
+                            }`}
+                          >
+                            <svg
+                              className="w-6 h-6"
+                              fill={favorites.includes(licensee.user[0]._id) ? 'currentColor' : 'none'}
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                 </div>
               )}
             </div>
@@ -211,8 +277,5 @@ function FavoritesContent() {
   );
 }
 
-export default function Favorites() {
-  return (
-    <FavoritesContent />
-  );
-} 
+const Favorites = () => <FavoritesContent />;
+export default Favorites; 

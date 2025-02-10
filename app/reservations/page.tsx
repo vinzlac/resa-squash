@@ -95,7 +95,7 @@ function ReservationsContent() {
             </svg>
           </Link>
           <h1 className="text-3xl font-bold">
-            Réservations pour la date du {formattedDate}
+            {formattedDate}
           </h1>
           <Link
             href={`/reservations?date=${nextDate}`}
