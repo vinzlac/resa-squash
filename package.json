@@ -9,19 +9,24 @@
     "build-prod": "TEAMR_API_KEY=$(cat .env.production | grep TEAMR_API_KEY | cut -d '=' -f2) NODE_ENV=production npm run build",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "init-db": "node scripts/init-db.mjs"
   },
   "dependencies": {
+    "@vercel/postgres": "^0.5.1",
     "date-fns": "^4.1.0",
     "next": "15.1.6",
+    "pg": "^8.13.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
+    "@types/pg": "^8.11.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "postcss": "^8",

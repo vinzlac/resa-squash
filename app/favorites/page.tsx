@@ -11,15 +11,26 @@ function FavoritesContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Utilisez un ID utilisateur temporaire pour le développement
+  const userId = "default-user"; // À remplacer par l'authentification réelle
+
   useEffect(() => {
-    const fetchLicensees = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/licensees');
-        if (!response.ok) {
-          throw new Error('Erreur lors de la récupération des licenciés');
+        const [licenseesResponse, favoritesResponse] = await Promise.all([
+          fetch('/api/licensees'),
+          fetch(`/api/favorites?userId=${userId}`)
+        ]);
+
+        if (!licenseesResponse.ok || !favoritesResponse.ok) {
+          throw new Error('Erreur lors de la récupération des données');
         }
-        const data = await response.json();
-        setLicensees(data);
+
+        const licenseesData = await licenseesResponse.json();
+        const favoritesData = await favoritesResponse.json();
+
+        setLicensees(licenseesData);
+        setFavorites(favoritesData);
       } catch (err) {
         setErrorMessage(err instanceof Error ? err.message : 'Une erreur est survenue');
       } finally {
@@ -27,24 +38,38 @@ function FavoritesContent() {
       }
     };
 
-    const loadFavorites = () => {
-      const savedFavorites = localStorage.getItem('favorites');
-      if (savedFavorites) {
-        setFavorites(JSON.parse(savedFavorites));
-      }
-    };
+    fetchData();
+  }, [userId]);
 
-    fetchLicensees();
-    loadFavorites();
-  }, []);
-
-  const handleToggleFavorite = (userId: string) => {
-    const newFavorites = favorites.includes(userId)
-      ? favorites.filter(id => id !== userId)
-      : [...favorites, userId];
+  const handleToggleFavorite = async (licenseeId: string) => {
+    const action = favorites.includes(licenseeId) ? 'remove' : 'add';
     
-    setFavorites(newFavorites);
-    localStorage.setItem('favorites', JSON.stringify(newFavorites));
+    try {
+      const response = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          licenseeId,
+          action
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la mise à jour des favoris');
+      }
+
+      setFavorites(prev => 
+        action === 'add' 
+          ? [...prev, licenseeId]
+          : prev.filter(id => id !== licenseeId)
+      );
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des favoris:', error);
+      setErrorMessage('Erreur lors de la mise à jour des favoris');
+    }
   };
 
   const getFilteredLicensees = () => licensees.filter(licensee => 
