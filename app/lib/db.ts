@@ -9,6 +9,9 @@ const pool = new pg.Pool({
   database: process.env.POSTGRES_DATABASE,
   password: process.env.POSTGRES_PASSWORD,
   port: 5432,
+  ssl: process.env.DATABASE_TYPE === 'vercel' ? {
+    rejectUnauthorized: false
+  } : false
 });
 
 // Fonction utilitaire pour exécuter des requêtes SQL
