@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ServerLogger from "./components/ServerLogger";
 
 export default function Home() {
   const today = new Date().toISOString().split("T")[0];
@@ -11,7 +12,7 @@ export default function Home() {
   // Log des variables d'environnement
 
   console.log("Environment variables in Home:");
-  console.log("NODE_ENV:", process.env.NODE_ENV);
+  console.log("NODE_ENV:", process.env.NODE_ENV); 
   console.log("DATABASE_TYPE:", process.env.DATABASE_TYPE);
   console.log("POSTGRES_USER:", process.env.POSTGRES_USER);
   console.log("POSTGRES_HOST:", process.env.POSTGRES_HOST);
@@ -25,6 +26,7 @@ export default function Home() {
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      <ServerLogger />
       <header>
         <h1 className="text-3xl font-bold">Club de Squash</h1>
       </header>
