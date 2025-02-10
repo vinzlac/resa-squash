@@ -9,19 +9,15 @@ const pool = new pg.Pool({
   database: process.env.POSTGRES_DATABASE,
   password: process.env.POSTGRES_PASSWORD,
   port: 5432,
-  ssl: process.env.DATABASE_TYPE === 'vercel' ? {
-    rejectUnauthorized: false
-  } : false
+  ssl: false
 });
 
 // Fonction utilitaire pour exécuter des requêtes SQL
 async function executeQuery(query: string, params: Array<string | number> = []) {
   if (process.env.DATABASE_TYPE === 'vercel') {
-    // Utiliser @vercel/postgres
     const result = await vercelSql.query(query, params);
     return result.rows;
   } else {
-    // Utiliser pg pour la base locale
     const client = await pool.connect();
     try {
       const result = await client.query(query, params);
