@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
+    "debug": "NODE_OPTIONS='--inspect' next dev",
     "prod": "TEAMR_API_KEY=$(cat .env.production | grep TEAMR_API_KEY | cut -d '=' -f2) NODE_ENV=production npm run build && TEAMR_API_KEY=$(cat .env.production | grep TEAMR_API_KEY | cut -d '=' -f2) NODE_ENV=production npm run start",
     "build-prod": "TEAMR_API_KEY=$(cat .env.production | grep TEAMR_API_KEY | cut -d '=' -f2) NODE_ENV=production npm run build",
     "build": "next build",
