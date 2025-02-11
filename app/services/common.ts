@@ -1,8 +1,9 @@
 import fs from "fs/promises";
 import { GET_LICENSEE_URL, BOOKING_URL, COURT_CLUB_IDS, GET_SESSION_URL, CUSTOM_ID, COORDINATES } from "./config";
-import { Licensee, Session, DayPlanning, CourtPlanning, TimeSlot, BookingResponse } from "./types.js";
+import { Licensee, Session, BookingResponse } from "./teamrTypes";
 import path from 'path';
 import { TEAMR_CONFIG } from "../config/teamr";
+import { DayPlanning, CourtPlanning, TimeSlot } from "./types.js";
 
 // Définir le chemin relatif correct
 const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
