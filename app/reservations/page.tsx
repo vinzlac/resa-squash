@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { Reservation } from '@/app/types/reservation';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { format, addDays, subDays, isBefore, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import ReservationModal from '@/app/components/ReservationModal';
 
 interface ReservationByTimeSlot {
   time: string;
@@ -27,26 +28,35 @@ function ReservationsContent() {
 
   const isDatePassed = isBefore(startOfDay(new Date(date)), startOfDay(new Date()));
 
-  useEffect(() => {
-    const fetchReservations = async () => {
-      try {
-        const response = await fetch(`/api/reservations?date=${date}`);
-        
-        if (!response.ok) {
-          throw new Error('Erreur lors de la récupération des réservations');
-        }
-        
-        const data = await response.json();
-        setReservations(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<{ courtId: string; time: string } | null>(null);
 
+  // Utiliser useRef pour stocker la date actuelle
+  const currentDateRef = useRef(date);
+
+  // Mémoriser fetchReservations sans dépendance à date
+  const fetchReservations = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/reservations?date=${currentDateRef.current}`);
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des réservations');
+      }
+      
+      const data = await response.json();
+      setReservations(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } finally {
+      setLoading(false);
+    }
+  }, []); // Plus de dépendance à date
+
+  // Mettre à jour la ref et déclencher le fetch quand la date change
+  useEffect(() => {
+    currentDateRef.current = date;
     fetchReservations();
-  }, [date]);
+  }, [date, fetchReservations]);
 
   // Regrouper les réservations par terrain
   const reservationsByCourtNumber: { [courtNumber: number]: ReservationByTimeSlot[] } = {};
@@ -71,6 +81,75 @@ function ReservationsContent() {
       });
     }
   });
+
+  const handleReservationClick = (courtId: string, time: string) => {
+    setSelectedSlot({ courtId, time });
+    setIsModalOpen(true);
+  };
+
+  const handleReservationConfirm = async (participant2Id: string) => {
+    if (!selectedSlot) return;
+
+    try {
+      // Ici, ajoutez la logique pour créer la réservation
+      console.log('Réservation confirmée:', {
+        courtId: selectedSlot.courtId,
+        time: selectedSlot.time,
+        participant1: 'default-user', // À remplacer par l'ID de l'utilisateur connecté
+        participant2: participant2Id
+      });
+      
+      setIsModalOpen(false);
+      setSelectedSlot(null);
+      // Rafraîchir les réservations après confirmation
+      fetchReservations();
+    } catch (error) {
+      console.error('Erreur lors de la réservation:', error);
+    }
+  };
+
+  // Dans le rendu des créneaux, ajoutez l'icône "+" pour les créneaux disponibles
+  const renderTimeSlot = (courtId: string, time: string) => {
+    const timeSlot = reservationsByCourtNumber[parseInt(courtId)]?.find(
+      slot => slot.time === time
+    );
+    
+    if (isDatePassed) {
+      return (
+        <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded">
+          <span className="text-gray-500 dark:text-gray-400">
+            {timeSlot?.participants.length ? timeSlot.participants.join(', ') : 'Personne'}
+          </span>
+        </div>
+      );
+    }
+    
+    if (timeSlot) {
+      return (
+        <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded">
+          {timeSlot.participants[0] === 'Disponible' ? (
+            <div className="flex justify-between items-center">
+              <span className="text-green-600 dark:text-green-400">Disponible</span>
+              <button
+                onClick={() => handleReservationClick(courtId, time)}
+                className="w-6 h-6 flex items-center justify-center text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <span className="text-gray-900 dark:text-white">
+              {timeSlot.participants.join(', ')}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="min-h-screen p-8 pb-20 sm:p-20">
@@ -139,17 +218,7 @@ function ReservationsContent() {
                           {timeSlot.time}
                         </dt>
                         <dd className="mt-1 text-sm sm:mt-0 sm:col-span-2">
-                          {timeSlot.participants[0] === 'Disponible' ? (
-                            isDatePassed ? (
-                              <span className="text-gray-500 dark:text-gray-400">Personne</span>
-                            ) : (
-                              <span className="text-green-600 dark:text-green-400">Disponible</span>
-                            )
-                          ) : (
-                            <span className="text-gray-900 dark:text-white">
-                              {timeSlot.participants.join(', ')}
-                            </span>
-                          )}
+                          {renderTimeSlot(courtNumber.toString(), timeSlot.time)}
                         </dd>
                       </div>
                     ))}
@@ -158,6 +227,19 @@ function ReservationsContent() {
               </div>
             ))}
           </div>
+        )}
+
+        {selectedSlot && (
+          <ReservationModal
+            isOpen={isModalOpen}
+            onClose={() => {
+              setIsModalOpen(false);
+              setSelectedSlot(null);
+            }}
+            courtId={selectedSlot.courtId}
+            time={selectedSlot.time}
+            onConfirm={handleReservationConfirm}
+          />
         )}
       </div>
     </div>
