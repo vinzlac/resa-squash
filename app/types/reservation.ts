@@ -2,7 +2,7 @@ export interface Reservation {
   id: number;
   court: number;
   time: string;
-  user?: string;
+  users: string[];
   date: string;
   available: boolean;
 } 

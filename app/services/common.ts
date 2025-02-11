@@ -3,7 +3,6 @@ import { GET_LICENSEE_URL, BOOKING_URL, COURT_CLUB_IDS, GET_SESSION_URL, CUSTOM_
 import { Licensee, Session, DayPlanning, CourtPlanning, TimeSlot, BookingResponse } from "./types.js";
 import path from 'path';
 import { TEAMR_CONFIG } from "../config/teamr";
-import { Reservation } from '@/app/types/reservation';
 
 // Définir le chemin relatif correct
 const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
@@ -12,6 +11,7 @@ const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
 
 // Fonction pour charger ou récupérer les licenciés
 export async function getLicencies(): Promise<Map<string, { firstName: string; lastName: string }>> {
+    console.log("getLicencies");
     try {
         console.log("📂 Chargement des licenciés depuis le fichier local...");
         const data = await fs.readFile(LICENCIES_FILE, "utf-8");
@@ -75,8 +75,10 @@ async function fetchAllLicensees(): Promise<Map<string, { firstName: string; las
 
 // Fonction pour récupérer les sessions d'un court donné
 export async function fetchSessionsForCourt(clubId: string, date: string): Promise<Session[]> {
-    console.log("USED API KEY : ", TEAMR_CONFIG.API_KEY);
-    console.log("USED BASE URL : ", TEAMR_CONFIG.BASE_URL);
+    // console.log("USED API KEY : ", TEAMR_CONFIG.API_KEY);
+    // console.log("USED BASE URL : ", TEAMR_CONFIG.BASE_URL);
+    console.log("fetchSessionsForCourt for clubId : ", clubId);
+    console.log("fetchSessionsForCourt for date : ", date);
     const response = await fetch(GET_SESSION_URL, {
         method: "POST",
         headers: {
@@ -94,6 +96,8 @@ export async function fetchSessionsForCourt(clubId: string, date: string): Promi
         })
     });
 
+    console.log("called url : ", GET_SESSION_URL);
+
     if (!response.ok) {
         console.error(`❌ Erreur HTTP ${response.status} pour le clubId: ${clubId}`);
         return [];
@@ -104,11 +108,17 @@ export async function fetchSessionsForCourt(clubId: string, date: string): Promi
 
 // Fonction pour récupérer le planning complet
 export async function fetchPlanning(date: string): Promise<DayPlanning> {
+    console.log("fetchPlanning for DATE : ", date);
     const licenseeMap = await getLicencies();
+    console.log("licenseeMap size : ", licenseeMap.size);
     const courts: CourtPlanning[] = [];
 
     for (const [courtNumber, clubId] of Object.entries(COURT_CLUB_IDS)) {
+        console.log("clubId : ", clubId);
+        console.log("courtNumber : ", courtNumber);
+
         const sessions = await fetchSessionsForCourt(clubId, date);
+        console.log("sessions count : ", sessions.length);
         
         // Trier les sessions par heure
         const sortedSessions = sessions.sort((a, b) => {
@@ -143,7 +153,7 @@ export async function fetchPlanning(date: string): Promise<DayPlanning> {
 }
 
 
-export async function bookSession(reservation: Reservation, friendUserId: string): Promise<BookingResponse> {
+export async function bookSession(userId: string, sessionId: string, friendUserId: string): Promise<BookingResponse> {
   try {
     const response = await fetch(BOOKING_URL, {
       method: 'POST',
@@ -156,12 +166,12 @@ export async function bookSession(reservation: Reservation, friendUserId: string
       },
       body: JSON.stringify({
         participant: {
-          userId: reservation.user,
+          userId: userId,
           isPresent: 'yes',
           coordinates: [2.5864862369264747, 48.869659697477495], // Remplacez par les coordonnées réelles si nécessaire
           friendUserId: friendUserId,
         },
-        sessionId: reservation.id, 
+        sessionId: sessionId, 
         customId: CUSTOM_ID,
       }),
     });

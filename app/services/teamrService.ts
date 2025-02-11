@@ -2,16 +2,6 @@ import { Reservation } from '@/app/types/reservation';
 import { TEAMR_CONFIG } from '@/app/config/teamr';
 import { fetchPlanning } from './common';
 
-interface TeamrReservation {
-  id: string;
-  courtId: string;
-  startTime: string;
-  endTime: string;
-  userId: string;
-  userName: string;
-  status: string;
-}
-
 class TeamrService {
   private baseUrl: string;
   private apiKey: string;
@@ -41,55 +31,30 @@ class TeamrService {
     });
   }
 
-  private mapTeamrReservationToReservation(teamrReservation: TeamrReservation): Reservation {
-    return {
-      id: parseInt(teamrReservation.id),
-      court: parseInt(teamrReservation.courtId),
-      time: this.formatTime(teamrReservation.startTime),
-      user: teamrReservation.userName,
-      date: this.formatDate(teamrReservation.startTime),
-      available: teamrReservation.status === 'available'
-    };
-  }
+  public async getDailyReservations(date: string): Promise<Reservation[]> {
+    console.log("getDailyReservations for DATE : ", date);
+    const reservations: Reservation[] = [];
+    const planning = await fetchPlanning(date);
 
-  async getDailyReservations(date: string): Promise<Reservation[]> {
-    try {
-      const planning = await fetchPlanning(date);
-      
-      const reservations: Reservation[] = [];
-
-      planning.courts.forEach(court => {
-        court.slots.forEach(slot => {
-          if (slot.isAvailable) {
-            // Crée une réservation pour un slot disponible
-            reservations.push({
-              id: parseInt(slot.sessionId),
-              court: parseInt(court.courtNumber),
-              time: slot.time,
-              date: planning.date,
-              available: true
-            });
-          } else {
-            // Crée une réservation pour chaque participant
-            slot.participants.forEach(participant => {
-              reservations.push({
-                id: parseInt(slot.sessionId),
-                court: parseInt(court.courtNumber),
-                time: slot.time,
-                user: `${participant.firstName} ${participant.lastName}`,
-                date: planning.date,
-                available: false
-              });
-            });
-          }
+    console.log("PLANNING : ", planning);
+    planning.courts.forEach(court => {
+      court.slots.forEach(slot => {
+        reservations.push({
+          id: parseInt(slot.sessionId),
+          court: parseInt(court.courtNumber),
+          time: slot.time,
+          date: planning.date,
+          available: slot.isAvailable,
+          users: slot.isAvailable 
+            ? [] 
+            : slot.participants.map(participant => 
+                `${participant.firstName} ${participant.lastName}`
+              )
         });
       });
+    });
 
-      return reservations;
-    } catch (error) {
-      console.error('Erreur lors de la récupération des réservations:', error);
-      throw new Error('Impossible de récupérer les réservations');
-    }
+    return reservations;
   }
 
   async getCourts(): Promise<{ id: string; name: string; }[]> {

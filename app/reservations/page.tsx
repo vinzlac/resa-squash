@@ -10,7 +10,7 @@ import ReservationModal from '@/app/components/ReservationModal';
 
 interface ReservationByTimeSlot {
   time: string;
-  participants: string[];
+  users: string[];
 }
 
 function ReservationsContent() {
@@ -71,13 +71,11 @@ function ReservationsContent() {
     );
 
     if (existingTimeSlot) {
-      if (!reservation.available && reservation.user) {
-        existingTimeSlot.participants.push(reservation.user);
-      }
+      existingTimeSlot.users = [...existingTimeSlot.users, ...reservation.users];
     } else {
       reservationsByCourtNumber[reservation.court].push({
         time: reservation.time,
-        participants: reservation.available ? ['Disponible'] : reservation.user ? [reservation.user] : [],
+        users: reservation.available ? ['Disponible'] : reservation.users,
       });
     }
   });
@@ -118,7 +116,7 @@ function ReservationsContent() {
       return (
         <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded">
           <span className="text-gray-500 dark:text-gray-400">
-            {timeSlot?.participants.length ? timeSlot.participants.join(', ') : 'Personne'}
+            {timeSlot?.users.length ? timeSlot.users.join(', ') : 'Personne'}
           </span>
         </div>
       );
@@ -127,7 +125,7 @@ function ReservationsContent() {
     if (timeSlot) {
       return (
         <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded">
-          {timeSlot.participants[0] === 'Disponible' ? (
+          {timeSlot.users[0] === 'Disponible' ? (
             <div className="flex justify-between items-center">
               <span className="text-green-600 dark:text-green-400">Disponible</span>
               <button
@@ -141,7 +139,7 @@ function ReservationsContent() {
             </div>
           ) : (
             <span className="text-gray-900 dark:text-white">
-              {timeSlot.participants.join(', ')}
+              {timeSlot.users.join(', ')}
             </span>
           )}
         </div>
