@@ -1,8 +1,9 @@
 import fs from "fs/promises";
-import { GET_LICENSEE_URL, COURT_CLUB_IDS, GET_SESSION_URL, CUSTOM_ID, COORDINATES } from "./config";
-import { Licensee, Session, DayPlanning, CourtPlanning, TimeSlot } from "./types.js";
+import { GET_LICENSEE_URL, BOOKING_URL, COURT_CLUB_IDS, GET_SESSION_URL, CUSTOM_ID, COORDINATES } from "./config";
+import { Licensee, Session, DayPlanning, CourtPlanning, TimeSlot, BookingResponse } from "./types.js";
 import path from 'path';
 import { TEAMR_CONFIG } from "../config/teamr";
+import { Reservation } from '@/app/types/reservation';
 
 // Définir le chemin relatif correct
 const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
@@ -139,4 +140,41 @@ export async function fetchPlanning(date: string): Promise<DayPlanning> {
         date,
         courts
     };
+}
+
+
+export async function bookSession(reservation: Reservation, friendUserId: string): Promise<BookingResponse> {
+  try {
+    const response = await fetch(BOOKING_URL, {
+      method: 'POST',
+      headers: {
+        'Host': 'app.teamr.eu',
+        'Content-Type': 'application/json',
+        'User-Agent': 'HappyPeople/201 CFNetwork/1568.200.51 Darwin/24.1.0',
+        'Accept': 'application/json, text/plain, */*',
+        'Authorization': TEAMR_CONFIG.API_KEY,
+      },
+      body: JSON.stringify({
+        participant: {
+          userId: reservation.user,
+          isPresent: 'yes',
+          coordinates: [2.5864862369264747, 48.869659697477495], // Remplacez par les coordonnées réelles si nécessaire
+          friendUserId: friendUserId,
+        },
+        sessionId: reservation.id, 
+        customId: CUSTOM_ID,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP : ${response.status}`);
+    }
+
+    const result: BookingResponse = await response.json();
+    console.log('Réservation effectuée :', result);
+    return result;
+  } catch (error) {
+    console.error('Erreur lors de la réservation :', error);
+    throw error;
+  }
 } 

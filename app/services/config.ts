@@ -1,5 +1,7 @@
 export const AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InZpbnpsYWNAZ21haWwuY29tIiwidXNlclR5cGUiOiJhcHAiLCJ1c2VySWQiOiI2MGJmMmZkZDFmZDhkMjAwMjBkMmM4YTciLCJjb2FjaCI6ZmFsc2UsImN1c3RvbUlkIjoiNWRkNmIzOTYxNTEwYzkxZDM1M2IwODMzIiwiaWF0IjoxNzIyOTU1NDkyLCJleHAiOjE3NTQ0OTE0OTJ9.TwjtkykWXXaTSFB3zq12qBVCROZuU5dSDxHq7Hp9n4c";
 export const GET_LICENSEE_URL = "https://app.teamr.eu/users/licensees";
+export const BOOKING_URL = 'https://app.teamr.eu/api/v1/bookings';
+
 export const COURT_CLUB_IDS: { [key: string]: string } = {
   "1": "60b754170ebdd0002094521b",
   "2": "60b76ff51b45be0020f0e985",
