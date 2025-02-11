@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import { GET_LICENSEE_URL, BOOKING_URL, COURT_CLUB_IDS, GET_SESSION_URL, CUSTOM_ID, COORDINATES } from "./config";
-import { Licensee, Session, BookingResponse } from "./teamrTypes";
+import { TrLicensee, TrSession, TrBookingResponse } from "./teamrTypes";
 import path from 'path';
 import { TEAMR_CONFIG } from "../config/teamr";
 import { DayPlanning, CourtPlanning, TimeSlot } from "./types.js";
@@ -19,7 +19,7 @@ export async function getLicencies(): Promise<Map<string, { firstName: string; l
        
         const licenseeMap = new Map<string, { firstName: string; lastName: string }>();
 
-        JSON.parse(data).forEach((licencie: Licensee) => {
+        JSON.parse(data).forEach((licencie: TrLicensee) => {
             if (licencie.user.length > 0) {
                 const user = licencie.user[0];
                 licenseeMap.set(user._id, { firstName: user.firstName, lastName: user.lastName });
@@ -61,7 +61,7 @@ async function fetchAllLicensees(): Promise<Map<string, { firstName: string; las
         return new Map();
     }
 
-    const data = await response.json() as Licensee[];
+    const data = await response.json() as TrLicensee[];
     const licenseeMap = new Map<string, { firstName: string; lastName: string }>();
 
     data.forEach(licencie => {
@@ -75,7 +75,7 @@ async function fetchAllLicensees(): Promise<Map<string, { firstName: string; las
 }
 
 // Fonction pour récupérer les sessions d'un court donné
-export async function fetchSessionsForCourt(clubId: string, date: string): Promise<Session[]> {
+export async function fetchSessionsForCourt(clubId: string, date: string): Promise<TrSession[]> {
     // console.log("USED API KEY : ", TEAMR_CONFIG.API_KEY);
     // console.log("USED BASE URL : ", TEAMR_CONFIG.BASE_URL);
     console.log("fetchSessionsForCourt for clubId : ", clubId);
@@ -104,7 +104,7 @@ export async function fetchSessionsForCourt(clubId: string, date: string): Promi
         return [];
     }
 
-    return await response.json() as Session[];
+    return await response.json() as TrSession[];
 }
 
 // Fonction pour récupérer le planning complet
@@ -154,7 +154,7 @@ export async function fetchPlanning(date: string): Promise<DayPlanning> {
 }
 
 
-export async function bookSession(userId: string, sessionId: string, friendUserId: string): Promise<BookingResponse> {
+export async function bookSession(userId: string, sessionId: string, friendUserId: string): Promise<TrBookingResponse> {
   try {
     const response = await fetch(BOOKING_URL, {
       method: 'POST',
@@ -181,7 +181,7 @@ export async function bookSession(userId: string, sessionId: string, friendUserI
       throw new Error(`Erreur HTTP : ${response.status}`);
     }
 
-    const result: BookingResponse = await response.json();
+    const result: TrBookingResponse = await response.json();
     console.log('Réservation effectuée :', result);
     return result;
   } catch (error) {

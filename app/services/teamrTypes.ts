@@ -1,4 +1,4 @@
-export interface User {
+export interface TrUser {
     firstName: string;
     lastName: string;
     _id: string;
@@ -6,13 +6,13 @@ export interface User {
     email: string;
 }
 
-export interface Licensee {
+export interface TrLicensee {
     _id: string;
-    user: User[];
+    user: TrUser[];
 }
 
 
-interface Club {
+interface TrClub {
     _id: string;
     name: string;
     email: string;
@@ -26,19 +26,19 @@ interface Club {
     webCoverUrl: string;
   }
   
-  interface Coach {
+  interface TrCoach {
     fullName: string;
     email: string;
     phone: string;
   }
   
-  export interface Location {
+  export interface TrLocation {
     coordinates: number[];
     _id: string;
     type: string;
   }
   
-  export interface Session {
+  export interface TrSession {
     _id: string;
     status: string;
     participants: string[];
@@ -49,7 +49,7 @@ interface Club {
     sold: number;
     category: string;
     deleted: boolean;
-    club: Club[];
+    club: TrClub[];
     tag: string;
     nbOfTickets: number;
     sessionName: string;
@@ -74,9 +74,9 @@ interface Club {
     zipCode: string;
     city: string;
     place: string;
-    coachs: Coach[];
+    coachs: TrCoach[];
     seasonId: string;
-    location: Location;
+    location: TrLocation;
     date: string;
     slotId: string;
     coach: string;
@@ -87,7 +87,7 @@ interface Club {
     updatedAt: string;
   }
   
-  export interface Transaction {
+  export interface TrTransaction {
     type: string;
     status: string;
     options: string;
@@ -111,8 +111,8 @@ interface Club {
     nbOfTickets: number;
   }
   
-  export interface BookingResponse {
-    session: Session;
-    transaction: Transaction;
-    friendTransaction: Transaction;
+  export interface TrBookingResponse {
+    session: TrSession;
+    transaction: TrTransaction;
+    friendTransaction: TrTransaction;
   }
