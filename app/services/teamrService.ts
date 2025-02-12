@@ -48,6 +48,7 @@ class TeamrService {
           users: slot.isAvailable 
             ? [] 
             : slot.participants.map(participant => ({
+                id: participant.id,
                 firstName: participant.firstName,
                 lastName: participant.lastName
               }))

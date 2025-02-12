@@ -7,6 +7,7 @@ export interface Participant {
 
 // Types pour le planning
 export interface PlanningParticipant {
+    id: string;
     firstName: string;
     lastName: string;
 }
@@ -14,8 +15,8 @@ export interface PlanningParticipant {
 export interface TimeSlot {
     time: string;
     isAvailable: boolean;
-    participants: PlanningParticipant[];
     sessionId: string;
+    participants: PlanningParticipant[];
 }
 
 export interface CourtPlanning {

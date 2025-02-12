@@ -173,6 +173,7 @@ export async function fetchPlanning(date: string): Promise<DayPlanning> {
           lastName: "Inconnu",
         };
         return {
+          id: userId,
           firstName: user.firstName,
           lastName: user.lastName,
         };
