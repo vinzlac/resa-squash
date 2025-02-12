@@ -40,7 +40,7 @@ class TeamrService {
     planning.courts.forEach(court => {
       court.slots.forEach(slot => {
         reservations.push({
-          id: parseInt(slot.sessionId),
+          id: slot.sessionId,
           court: parseInt(court.courtNumber),
           time: slot.time,
           date: planning.date,

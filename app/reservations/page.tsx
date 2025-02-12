@@ -11,6 +11,7 @@ import ReservationModal from '@/app/components/ReservationModal';
 interface ReservationByTimeSlot {
   time: string;
   users: User[];
+  sessionId: string;
 }
 
 function ReservationsContent() {
@@ -29,7 +30,7 @@ function ReservationsContent() {
   const isDatePassed = isBefore(startOfDay(new Date(date)), startOfDay(new Date()));
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<{ courtId: string; time: string } | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<{ sessionId: string; time: string } | null>(null);
 
   // Utiliser useRef pour stocker la date actuelle
   const currentDateRef = useRef(date);
@@ -37,6 +38,7 @@ function ReservationsContent() {
   // Mémoriser fetchReservations sans dépendance à date
   const fetchReservations = useCallback(async () => {
     try {
+      console.log('%c Calling GET /reservations with URL:', 'color: #bada55', `/api/reservations?date=${currentDateRef.current}`);
       const response = await fetch(`/api/reservations?date=${currentDateRef.current}`);
       
       if (!response.ok) {
@@ -44,6 +46,7 @@ function ReservationsContent() {
       }
       
       const data = await response.json();
+      console.log('%c Received data:', 'color: #bada55', data);
       setReservations(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -75,13 +78,15 @@ function ReservationsContent() {
     } else {
       reservationsByCourtNumber[reservation.court].push({
         time: reservation.time,
+        sessionId: reservation.id.toString(),
         users: reservation.available ? [] : reservation.users,
       });
     }
+    console.log('reservation:', reservation);
   });
 
-  const handleReservationClick = (courtId: string, time: string) => {
-    setSelectedSlot({ courtId, time });
+  const handleReservationClick = (sessionId: string, time: string) => {
+    setSelectedSlot({ sessionId, time });
     setIsModalOpen(true);
   };
 
@@ -91,7 +96,7 @@ function ReservationsContent() {
     try {
       // Ici, ajoutez la logique pour créer la réservation
       console.log('Réservation confirmée:', {
-        courtId: selectedSlot.courtId,
+        sessionId: selectedSlot.sessionId,
         time: selectedSlot.time,
         participant1: 'default-user', // À remplacer par l'ID de l'utilisateur connecté
         participant2: participant2Id
@@ -123,13 +128,14 @@ function ReservationsContent() {
     }
     
     if (timeSlot) {
+      console.log('timeSlot:', timeSlot);
       return (
         <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded">
           {timeSlot.users.length === 0 ? (
             <div className="flex justify-between items-center">
               <span className="text-green-600 dark:text-green-400">Disponible</span>
               <button
-                onClick={() => handleReservationClick(courtId, time)}
+                onClick={() => handleReservationClick(timeSlot.sessionId, timeSlot.time)}
                 className="w-6 h-6 flex items-center justify-center text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,7 +240,7 @@ function ReservationsContent() {
               setIsModalOpen(false);
               setSelectedSlot(null);
             }}
-            courtId={selectedSlot.courtId}
+            sessionId={selectedSlot.sessionId}
             time={selectedSlot.time}
             onConfirm={handleReservationConfirm}
           />

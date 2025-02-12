@@ -6,12 +6,12 @@ import { useState, useEffect } from 'react';
 interface ReservationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  courtId: string;
+  sessionId: string;
   time: string;
-  onConfirm: (participant2Id: string) => void;
+  onConfirm: (partnerId: string) => void;
 }
 
-export default function ReservationModal({ isOpen, onClose, courtId, time, onConfirm }: ReservationModalProps) {
+export default function ReservationModal({ isOpen, onClose, sessionId, time, onConfirm }: ReservationModalProps) {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [licensees, setLicensees] = useState<Licensee[]>([]);
   const [selectedParticipant, setSelectedParticipant] = useState<string>('');
@@ -62,6 +62,31 @@ export default function ReservationModal({ isOpen, onClose, courtId, time, onCon
     favorites.includes(licensee.user[0]._id)
   );
 
+  const handleConfirm = async () => {
+    try {
+      // Remplacez 'default-user' par l'ID de l'utilisateur connecté
+      const userId = 'default-user';
+
+      const response = await fetch(`/api/reservations/${sessionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, partnerId: selectedParticipant }),
+      });
+
+      if (response.ok) {
+        onConfirm(selectedParticipant);
+      } else {
+        console.error('Erreur lors de la réservation:', await response.json());
+        // Gérer l'erreur, par exemple en affichant un message à l'utilisateur
+      }
+    } catch (error) {
+      console.error('Erreur lors de la réservation:', error);
+      // Gérer l'erreur, par exemple en affichant un message à l'utilisateur
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -79,7 +104,7 @@ export default function ReservationModal({ isOpen, onClose, courtId, time, onCon
 
         <h2 className="text-xl font-semibold mb-4">Réserver un créneau</h2>
         <p className="text-gray-600 dark:text-gray-400 mb-4">
-          Terrain {courtId} - {time}
+          Créneau de {time}
         </p>
 
         {isLoading ? (
@@ -116,19 +141,16 @@ export default function ReservationModal({ isOpen, onClose, courtId, time, onCon
                 Annuler
               </button>
               <button
-                onClick={() => {
-                  if (selectedParticipant) {
-                    onConfirm(selectedParticipant);
-                  }
-                }}
+                type="button"
+                onClick={handleConfirm}
                 disabled={!selectedParticipant}
-                className={`px-4 py-2 rounded ${
+                className={`inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
                   selectedParticipant
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    ? 'bg-blue-100 text-blue-900 hover:bg-blue-200 focus-visible:ring-blue-500'
+                    : 'bg-gray-100 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                Réserver
+                Confirmer
               </button>
             </div>
           </div>

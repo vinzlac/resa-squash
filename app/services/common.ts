@@ -104,7 +104,9 @@ export async function fetchSessionsForCourt(clubId: string, date: string): Promi
         return [];
     }
 
-    return await response.json() as TrSession[];
+    const trSessions = await response.json() as TrSession[];
+    console.log("Sessions IDs:", trSessions.map(session => session._id));
+    return trSessions;
 }
 
 // Fonction pour récupérer le planning complet
@@ -154,7 +156,7 @@ export async function fetchPlanning(date: string): Promise<DayPlanning> {
 }
 
 
-export async function bookSession(userId: string, sessionId: string, friendUserId: string): Promise<TrBookingResponse> {
+export async function bookSession(sessionId: string, userId: string, friendUserId: string): Promise<TrBookingResponse> {
   try {
     const response = await fetch(BOOKING_URL, {
       method: 'POST',
@@ -188,4 +190,4 @@ export async function bookSession(userId: string, sessionId: string, friendUserI
     console.error('Erreur lors de la réservation :', error);
     throw error;
   }
-} 
+}

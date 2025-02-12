@@ -4,7 +4,7 @@ export interface User {
 }
 
 export interface Reservation {
-  id: number;
+  id: string;
   court: number;
   time: string;
   date: string;
