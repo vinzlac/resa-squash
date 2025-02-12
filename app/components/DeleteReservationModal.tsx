@@ -4,9 +4,45 @@ interface DeleteReservationModalProps {
   isOpen: boolean;
   onClose: () => void;
   time: string;
+  sessionId: string;
+  userId: string;
+  partnerId: string;
+  onSuccess: () => void;
 }
 
-export default function DeleteReservationModal({ isOpen, onClose, time }: DeleteReservationModalProps) {
+export default function DeleteReservationModal({
+  isOpen,
+  onClose,
+  sessionId,
+  userId,
+  partnerId,
+  onSuccess,
+  time,
+}: DeleteReservationModalProps) {
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`/api/reservations/${sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          partnerId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la suppression de la réservation');
+      }
+
+      onClose();
+      onSuccess();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -23,7 +59,7 @@ export default function DeleteReservationModal({ isOpen, onClose, time }: Delete
             Annuler
           </button>
           <button
-            onClick={onClose}
+            onClick={handleDelete}
             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
             Supprimer

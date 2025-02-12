@@ -114,10 +114,10 @@ function ReservationsContent() {
   };
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [slotToDelete, setSlotToDelete] = useState<{ time: string } | null>(null);
+  const [slotToDelete, setSlotToDelete] = useState<{ sessionId: string; time: string; partnerId: string } | null>(null);
 
-  const handleDeleteClick = (time: string) => {
-    setSlotToDelete({ time });
+  const handleDeleteClick = (sessionId: string, time: string, partnerId: string) => {
+    setSlotToDelete({ sessionId, time, partnerId });
     setIsDeleteModalOpen(true);
   };
 
@@ -160,7 +160,7 @@ function ReservationsContent() {
               </span>
               {timeSlot.users[0]?.id === connectedUser.id && (
                 <button
-                  onClick={() => handleDeleteClick(timeSlot.time)}
+                  onClick={() => handleDeleteClick(timeSlot.sessionId, timeSlot.time, timeSlot.users[1].id)}
                   className="ml-2 text-red-500 hover:text-red-700"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -275,6 +275,10 @@ function ReservationsContent() {
               setIsDeleteModalOpen(false);
               setSlotToDelete(null);
             }}
+            sessionId={slotToDelete.sessionId}
+            userId={connectedUser.id}
+            partnerId={slotToDelete.partnerId}
+            onSuccess={fetchReservations}
             time={slotToDelete.time}
           />
         )}

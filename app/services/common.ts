@@ -251,7 +251,7 @@ export async function deleteBookSession(
         sessionId: sessionId,
         customId: CUSTOM_ID,
       });
-      console.log("booking body : ", body);
+      console.log("delete booking body : ", body);
       const response = await fetch(BOOKING_URL, {
         method: "POST",
         headers: {
