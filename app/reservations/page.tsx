@@ -143,7 +143,19 @@ function ReservationsContent() {
         <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded">
           {timeSlot.users.length === 0 ? (
             <div className="flex justify-between items-center">
-              <span className="text-green-600 dark:text-green-400">Disponible</span>
+              <div className="group relative">
+                <span className="text-green-600 dark:text-green-400 cursor-help">
+                  Disponible
+                </span>
+                <div className="absolute left-0 top-0 mt-6 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
+                  <div className="bg-black text-white text-xs rounded py-1 px-2 whitespace-pre">
+                    {JSON.stringify({
+                      sessionId: timeSlot.sessionId
+                    }, null, 2)}
+                  </div>
+                  <div className="w-3 h-3 left-3 -top-1 absolute transform rotate-45 bg-black"></div>
+                </div>
+              </div>
               <button
                 onClick={() => handleReservationClick(timeSlot.sessionId, timeSlot.time)}
                 className="w-6 h-6 flex items-center justify-center text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
@@ -155,9 +167,21 @@ function ReservationsContent() {
             </div>
           ) : (
             <div className="flex justify-between items-center">
-              <span className="text-gray-900 dark:text-white">
-                {timeSlot.users.map(user => `${user.firstName} ${user.lastName}`).join(', ')}
-              </span>
+              <div className="group relative">
+                <span className="text-gray-900 dark:text-white cursor-help">
+                  {timeSlot.users.map(user => `${user.firstName} ${user.lastName}`).join(', ')}
+                </span>
+                <div className="absolute left-0 top-0 mt-6 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
+                  <div className="bg-black text-white text-xs rounded py-1 px-2 whitespace-pre">
+                    {JSON.stringify({
+                      sessionId: timeSlot.sessionId,
+                      userId: timeSlot.users[0]?.id,
+                      partnerId: timeSlot.users[1]?.id
+                    }, null, 2)}
+                  </div>
+                  <div className="w-3 h-3 left-3 -top-1 absolute transform rotate-45 bg-black"></div>
+                </div>
+              </div>
               {timeSlot.users[0]?.id === connectedUser.id && (
                 <button
                   onClick={() => handleDeleteClick(timeSlot.sessionId, timeSlot.time, timeSlot.users[1].id)}
