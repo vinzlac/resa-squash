@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { format, addDays, subDays, isBefore, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ReservationModal from '@/app/components/ReservationModal';
+import { connectedUser } from '@/app/services/connectedUser';
 
 interface ReservationByTimeSlot {
   time: string;
@@ -98,7 +99,7 @@ function ReservationsContent() {
       console.log('Réservation confirmée:', {
         sessionId: selectedSlot.sessionId,
         time: selectedSlot.time,
-        participant1: 'default-user', // À remplacer par l'ID de l'utilisateur connecté
+        participant1: connectedUser.id,
         participant2: participant2Id
       });
       

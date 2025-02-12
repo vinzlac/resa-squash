@@ -2,6 +2,7 @@
 
 import { Licensee } from '@/app/types/licensee';
 import { useState, useEffect } from 'react';
+import { connectedUser } from '@/app/services/connectedUser';
 
 interface ReservationModalProps {
   isOpen: boolean;
@@ -27,7 +28,7 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
         setIsLoading(true);
         const [licenseesResponse, favoritesResponse] = await Promise.all([
           fetch('/api/licensees'),
-          fetch('/api/favorites?userId=default-user')
+          fetch(`/api/favorites?userId=${connectedUser.id}`)
         ]);
 
         if (!licenseesResponse.ok || !favoritesResponse.ok) {
@@ -64,8 +65,7 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
 
   const handleConfirm = async () => {
     try {
-      // Remplacez 'default-user' par l'ID de l'utilisateur connecté
-      const userId = 'default-user';
+      const userId = connectedUser.id;
 
       const response = await fetch(`/api/reservations/${sessionId}`, {
         method: 'PUT',

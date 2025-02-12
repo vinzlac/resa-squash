@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Licensee } from '@/app/types/licensee';
+import { connectedUser } from '@/app/services/connectedUser';
 
 type SortDirection = 'asc' | 'desc';
 type SortField = 'firstName' | 'lastName';
@@ -16,15 +17,12 @@ function FavoritesContent() {
   const [sortField, setSortField] = useState<SortField>('lastName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-  // Utilisez un ID utilisateur temporaire pour le développement
-  const userId = "default-user"; // À remplacer par l'authentification réelle
-
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [licenseesResponse, favoritesResponse] = await Promise.all([
           fetch('/api/licensees'),
-          fetch(`/api/favorites?userId=${userId}`)
+          fetch(`/api/favorites?userId=${connectedUser.id}`)
         ]);
 
         if (!licenseesResponse.ok || !favoritesResponse.ok) {
@@ -44,7 +42,7 @@ function FavoritesContent() {
     };
 
     fetchData();
-  }, [userId]);
+  }, []);
 
   const handleToggleFavorite = async (licenseeId: string) => {
     const action = favorites.includes(licenseeId) ? 'remove' : 'add';
@@ -56,7 +54,7 @@ function FavoritesContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId,
+          userId: connectedUser.id,
           licenseeId,
           action
         }),
