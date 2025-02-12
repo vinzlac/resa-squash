@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
-import { Reservation } from '@/app/types/reservation';
+import { Reservation, User } from '@/app/types/reservation';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { format, addDays, subDays, isBefore, startOfDay } from 'date-fns';
@@ -10,7 +10,7 @@ import ReservationModal from '@/app/components/ReservationModal';
 
 interface ReservationByTimeSlot {
   time: string;
-  users: string[];
+  users: User[];
 }
 
 function ReservationsContent() {
@@ -75,7 +75,7 @@ function ReservationsContent() {
     } else {
       reservationsByCourtNumber[reservation.court].push({
         time: reservation.time,
-        users: reservation.available ? ['Disponible'] : reservation.users,
+        users: reservation.available ? [] : reservation.users,
       });
     }
   });
@@ -116,7 +116,7 @@ function ReservationsContent() {
       return (
         <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded">
           <span className="text-gray-500 dark:text-gray-400">
-            {timeSlot?.users.length ? timeSlot.users.join(', ') : 'Personne'}
+            {timeSlot?.users.length ? timeSlot.users.map(user => `${user.firstName} ${user.lastName}`).join(', ') : 'Personne'}
           </span>
         </div>
       );
@@ -125,7 +125,7 @@ function ReservationsContent() {
     if (timeSlot) {
       return (
         <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded">
-          {timeSlot.users[0] === 'Disponible' ? (
+          {timeSlot.users.length === 0 ? (
             <div className="flex justify-between items-center">
               <span className="text-green-600 dark:text-green-400">Disponible</span>
               <button
@@ -139,7 +139,7 @@ function ReservationsContent() {
             </div>
           ) : (
             <span className="text-gray-900 dark:text-white">
-              {timeSlot.users.join(', ')}
+              {timeSlot.users.map(user => `${user.firstName} ${user.lastName}`).join(', ')}
             </span>
           )}
         </div>

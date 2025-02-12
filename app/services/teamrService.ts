@@ -47,9 +47,10 @@ class TeamrService {
           available: slot.isAvailable,
           users: slot.isAvailable 
             ? [] 
-            : slot.participants.map(participant => 
-                `${participant.firstName} ${participant.lastName}`
-              )
+            : slot.participants.map(participant => ({
+                firstName: participant.firstName,
+                lastName: participant.lastName
+              }))
         });
       });
     });
