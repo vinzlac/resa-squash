@@ -26,10 +26,18 @@ export default function Home() {
     process.env.POSTGRES_URL_NON_POOLING
   );
 
-  const handleLogout = () => {
-    // Supprimer le cookie d'authentification
-    document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
   };
 
   return (

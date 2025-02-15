@@ -53,7 +53,11 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ 
+          email, 
+          password,
+          rememberMe 
+        }),
       });
 
       const data = await response.json();
@@ -62,10 +66,7 @@ export default function LoginPage() {
         throw new Error(data.error || 'Erreur lors de la connexion');
       }
 
-      // Définir le cookie avec le token JWT
-      const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60;
-      document.cookie = `auth-token=${data.token}; path=/; max-age=${maxAge}; secure; samesite=strict`;
-
+      // Plus besoin de gérer le cookie ici, il est défini par l'API
       router.push('/');
     } catch (err) {
       console.error(err);

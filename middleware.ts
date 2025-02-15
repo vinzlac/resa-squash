@@ -5,13 +5,18 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
   const isLoginPage = request.nextUrl.pathname === '/login';
 
-  // Si pas de token et pas sur la page de login, rediriger vers login
+  // Ajouter des logs pour déboguer
+  console.log('Middleware - Path:', request.nextUrl.pathname);
+  console.log('Middleware - Token exists:', !!token);
+  console.log('Middleware - Is login page:', isLoginPage);
+
   if (!token && !isLoginPage) {
+    console.log('Middleware - Redirecting to login');
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Si token et sur la page de login, rediriger vers home
   if (token && isLoginPage) {
+    console.log('Middleware - Redirecting to home');
     return NextResponse.redirect(new URL('/', request.url));
   }
 
