@@ -7,48 +7,20 @@ import Link from 'next/link';
 
 export default function ProfilePage() {
   const user = useUserStore((state) => state.user);
-  const [isLoading, setIsLoading] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     setIsHydrated(true);
-    const checkAuth = async () => {
-      try {
-        // Vérifier si le cookie existe
-        const response = await fetch('/api/auth/check', { method: 'GET' });
-        
-        if (!response.ok) {
-          useUserStore.getState().setUser(null);
-          router.replace('/login');
-          return;
-        }
+  }, []);
 
-        // Vérifier que nous avons les données utilisateur
-        if (!user) {
-          router.replace('/login');
-          return;
-        }
-
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Erreur de vérification:', error);
-        useUserStore.getState().setUser(null);
-        router.replace('/login');
-      }
-    };
-
-    checkAuth();
-  }, [user, router]);
-
-  // Afficher rien pendant l'hydratation
   if (!isHydrated) {
     return null;
   }
 
-  // Afficher un état de chargement
-  if (isLoading || !user) {
-    return <div className="min-h-screen bg-gray-50 dark:bg-gray-900" />;
+  if (!user) {
+    router.replace('/login');
+    return null;
   }
 
   return (
@@ -75,7 +47,7 @@ export default function ProfilePage() {
                 d="M10 19l-7-7m0 0l7-7m-7 7h18"
               />
             </svg>
-            Retour à l'accueil
+            Retour à l&apos;accueil
           </Link>
         </div>
         
