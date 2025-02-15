@@ -87,7 +87,7 @@ export default function HomeMenu() {
         </svg>
       </Link>
 
-      {breadcrumbs && breadcrumbs.map((crumb, index) => (
+      {breadcrumbs && breadcrumbs.map((crumb) => (
         <div key={crumb.path} className="flex items-center space-x-2">
           <span className="text-gray-400">/</span>
           {crumb.isLast ? (
