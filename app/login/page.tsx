@@ -37,13 +37,12 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const router = useRouter();
+  const [isHydrated, setIsHydrated] = useState(false);
   const searchParams = useSearchParams();
-  const from = searchParams.get('from') || '/';
+  const from = searchParams?.get('from') || '/';
 
   useEffect(() => {
-    setIsClient(true);
+    setIsHydrated(true);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -51,7 +50,6 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
 
-    // Récupération sécurisée des valeurs du formulaire
     const form = e.currentTarget;
     const emailInput = form.elements.namedItem('email') as HTMLInputElement;
     const passwordInput = form.elements.namedItem('password') as HTMLInputElement;
@@ -78,18 +76,14 @@ export default function LoginPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || 'Erreur lors de la connexion');
       }
 
-      const data = await response.json();
-      
-      // S'assurer que le store est initialisé avant la redirection
       if (data.success && data.user) {
         useUserStore.getState().setUser(data.user);
-        // Attendre un peu pour que le store soit mis à jour
-        await new Promise(resolve => setTimeout(resolve, 100));
         window.location.href = from;
       } else {
         throw new Error('Données utilisateur manquantes');
@@ -97,12 +91,14 @@ export default function LoginPage() {
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isClient) {
-    return <div className="min-h-screen bg-gray-50 dark:bg-gray-900" />;
+  // Afficher rien pendant l'hydratation
+  if (!isHydrated) {
+    return null;
   }
 
   return (
@@ -118,8 +114,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit} autoComplete="off">
-          <input type="hidden" name="remember" value="true" />
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
               <label htmlFor="email" className="sr-only">
@@ -151,20 +146,18 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                Se souvenir de moi
-              </label>
-            </div>
+          <div className="flex items-center">
+            <input
+              id="remember-me"
+              name="remember-me"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+            />
+            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+              Se souvenir de moi
+            </label>
           </div>
 
           {error && (
@@ -173,25 +166,13 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative flex w-full justify-center rounded-md bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Connexion en cours...
-                </span>
-              ) : (
-                'Se connecter'
-              )}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {isLoading ? 'Connexion...' : 'Se connecter'}
+          </button>
         </form>
       </div>
     </div>
