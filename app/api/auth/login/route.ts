@@ -20,7 +20,7 @@ interface TeamRAuthRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, rememberMe } = await request.json();
+    const { email, password } = await request.json();
 
     const authRequest: TeamRAuthRequest = {
       credentials: {
@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     
     const responseJson = NextResponse.json({
+      success: true,
       user: {
         id: data.userId,
         firstName: data.user.firstName,
@@ -66,15 +67,14 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60; // 30 jours ou 1 jour
     responseJson.cookies.set({
-      name: 'auth-token',
+      name: 'authToken',
       value: data.token,
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge
+      maxAge: 60 * 60 * 24 // 24 heures
     });
 
     return responseJson;

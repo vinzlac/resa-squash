@@ -2,22 +2,22 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('auth-token')?.value;
+  const token = request.cookies.get('authToken')?.value;
   const isLoginPage = request.nextUrl.pathname === '/login';
 
-  // Ajouter des logs pour déboguer
-  console.log('Middleware - Path:', request.nextUrl.pathname);
-  console.log('Middleware - Token exists:', !!token);
-  console.log('Middleware - Is login page:', isLoginPage);
-
+  // Protéger toutes les routes sauf /login
   if (!token && !isLoginPage) {
-    console.log('Middleware - Redirecting to login');
-    return NextResponse.redirect(new URL('/login', request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('from', request.nextUrl.pathname);
+    return NextResponse.redirect(url);
   }
 
+  // Rediriger vers home si déjà connecté
   if (token && isLoginPage) {
-    console.log('Middleware - Redirecting to home');
-    return NextResponse.redirect(new URL('/', request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = '/';
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
