@@ -44,21 +44,32 @@ export default function LoginPage() {
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const username = formData.get('username');
+    const email = formData.get('email');
     const password = formData.get('password');
 
     try {
-      if (username === 'admin' && password === 'admin') {
-        // Durée du cookie selon l'option "Se souvenir de moi"
-        const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60; // 30 jours ou 1 jour
-        document.cookie = `auth-token=dummy-token; path=/; max-age=${maxAge}; secure; samesite=strict`;
-        router.push('/');
-      } else {
-        setError('Identifiants incorrects');
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur lors de la connexion');
       }
+
+      // Définir le cookie avec le token JWT
+      const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60;
+      document.cookie = `auth-token=${data.token}; path=/; max-age=${maxAge}; secure; samesite=strict`;
+
+      router.push('/');
     } catch (err) {
       console.error(err);
-      setError('Une erreur est survenue');
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setIsLoading(false);
     }
@@ -80,16 +91,16 @@ export default function LoginPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
-              <label htmlFor="username" className="sr-only">
-                Nom d&apos;utilisateur
+              <label htmlFor="email" className="sr-only">
+                Email
               </label>
               <input
-                id="username"
-                name="username"
-                type="text"
+                id="email"
+                name="email"
+                type="email"
                 required
                 className="relative block w-full rounded-t-md border-0 py-3 px-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-blue-600 dark:bg-gray-800 dark:text-white dark:ring-gray-700"
-                placeholder="Nom d'utilisateur"
+                placeholder="Email"
               />
             </div>
             <div>
@@ -147,13 +158,6 @@ export default function LoginPage() {
                 'Se connecter'
               )}
             </button>
-          </div>
-
-          <div className="text-sm text-center text-gray-600 dark:text-gray-400">
-            <p>Utilisez les identifiants de test :</p>
-            <p className="font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded mt-1 inline-block">
-              admin / admin
-            </p>
           </div>
         </form>
       </div>
