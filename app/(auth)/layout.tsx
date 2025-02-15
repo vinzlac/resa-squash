@@ -1,6 +1,7 @@
 'use client';
 
 import UserMenu from '../components/UserMenu';
+import HomeMenu from '../components/HomeMenu';
 
 export default function AuthLayout({
   children,
@@ -9,7 +10,8 @@ export default function AuthLayout({
 }) {
   return (
     <div className="min-h-screen relative">
-      <div className="absolute top-4 right-4">
+      <div className="flex justify-between items-center absolute top-4 w-full px-4">
+        <HomeMenu />
         <UserMenu />
       </div>
 
