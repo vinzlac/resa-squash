@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useUserStore } from '../stores/userStore';
+import { useUserStore } from '../../stores/userStore';
 
 // Icône de squash en SVG
 const SquashIcon = () => (

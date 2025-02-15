@@ -1,6 +1,6 @@
 'use client';
 
-import UserMenu from '../components/UserMenu';
+import UserMenu from '../../components/UserMenu';
 
 export default function ProfileLayout({
   children,

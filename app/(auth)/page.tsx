@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import UserMenu from './components/UserMenu';
-import HomeContent from './components/HomeContent';
+import UserMenu from '@/app/components/UserMenu';
+import HomeContent from '@/app/components/HomeContent';
 
 export default function Home() {
   const [isHydrated, setIsHydrated] = useState(false);
