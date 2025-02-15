@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserStore } from '../../stores/userStore';
 
 // Icône de squash en SVG
@@ -33,13 +33,14 @@ const SquashIcon = () => (
   </svg>
 );
 
-export default function LoginPage() {
+function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const from = searchParams?.get('from') || '/';
+  const from = searchParams.get('from') || '/';
 
   useEffect(() => {
     setIsHydrated(true);
@@ -84,7 +85,7 @@ export default function LoginPage() {
 
       if (data.success && data.user) {
         useUserStore.getState().setUser(data.user);
-        window.location.href = from;
+        router.push(from);
       } else {
         throw new Error('Données utilisateur manquantes');
       }
@@ -176,5 +177,13 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 } 
