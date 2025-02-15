@@ -1,20 +1,23 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const publicPaths = ['/login'];
+
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('authToken')?.value;
-  const isLoginPage = request.nextUrl.pathname === '/login';
+  const currentPath = request.nextUrl.pathname;
+  const isPublicPath = publicPaths.includes(currentPath);
 
-  // Protéger toutes les routes sauf /login
-  if (!token && !isLoginPage) {
+  // Si pas de token et pas sur une page publique -> redirection login
+  if (!token && !isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    url.searchParams.set('from', request.nextUrl.pathname);
+    url.searchParams.set('from', currentPath);
     return NextResponse.redirect(url);
   }
 
-  // Rediriger vers home si déjà connecté
-  if (token && isLoginPage) {
+  // Si token et sur une page publique -> redirection home
+  if (token && isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);

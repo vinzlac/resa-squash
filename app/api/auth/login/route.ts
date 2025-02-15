@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
         firstName: data.user.firstName,
         lastName: data.user.lastName,
         email: data.user.email,
+        DOB: data.user.DOB,
       }
     });
 

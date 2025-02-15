@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useUserStore } from '../stores/userStore';
 
 // Icône de squash en SVG
 const SquashIcon = () => (
@@ -82,8 +83,17 @@ export default function LoginPage() {
         throw new Error(data.error || 'Erreur lors de la connexion');
       }
 
-      // Forcer un rechargement complet de la page
-      window.location.href = from;
+      const data = await response.json();
+      
+      // S'assurer que le store est initialisé avant la redirection
+      if (data.success && data.user) {
+        useUserStore.getState().setUser(data.user);
+        // Attendre un peu pour que le store soit mis à jour
+        await new Promise(resolve => setTimeout(resolve, 100));
+        window.location.href = from;
+      } else {
+        throw new Error('Données utilisateur manquantes');
+      }
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
