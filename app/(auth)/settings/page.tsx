@@ -33,7 +33,7 @@ export default function SettingsPage() {
 
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 space-y-6">
           <Link
-            href="/favorites"
+            href="/settings/favorites"
             className="block p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow"
           >
             <div className="flex items-center justify-between">
