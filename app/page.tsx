@@ -3,13 +3,19 @@
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import ServerLogger from "./components/ServerLogger";
+import { useEffect, useState } from 'react';
 
 export default function Home() {
   const router = useRouter();
-  const today = new Date().toISOString().split("T")[0];
+  const [today, setToday] = useState('');
+  const [buildDate, setBuildDate] = useState('');
   const environment = process.env.NODE_ENV;
-  const buildDate =
-    process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString();
+
+  useEffect(() => {
+    // Initialiser les dates côté client uniquement
+    setToday(new Date().toISOString().split("T")[0]);
+    setBuildDate(process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString());
+  }, []);
 
   // Log des variables d'environnement
 
@@ -117,10 +123,11 @@ export default function Home() {
         <footer className="row-start-3 text-center text-sm text-gray-500">
           <div>
             <p>© 2024 Club de Squash. Tous droits réservés.</p>
-            <p className="text-xs mt-1">
-              Environnement : {environment} (
-              {new Date(buildDate).toLocaleString("fr-FR")})
-            </p>
+            {buildDate && (
+              <p className="text-xs mt-1">
+                Environnement : {environment} ({new Date(buildDate).toLocaleString("fr-FR")})
+              </p>
+            )}
           </div>
         </footer>
       </div>
