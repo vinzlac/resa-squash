@@ -1,5 +1,5 @@
 import { sql as vercelSql } from "@vercel/postgres";
-import pg from "pg";
+import { Pool } from 'pg';
 import { cache } from "react";
 
 // Log des variables d'environnement au démarrage
@@ -15,14 +15,15 @@ console.log("POSTGRES_PRISMA_URL:", process.env.POSTGRES_PRISMA_URL);
 console.log("POSTGRES_URL_NON_POOLING:", process.env.POSTGRES_URL_NON_POOLING);
 
 // Configuration pour PostgreSQL local
-const pool = new pg.Pool({
+const pool = new Pool({
   user: process.env.POSTGRES_USER,
   host: process.env.POSTGRES_HOST,
   database: process.env.POSTGRES_DATABASE,
   password: process.env.POSTGRES_PASSWORD,
   port: 5432,
-  ssl: false,
 });
+
+export const db = pool;
 
 // Fonction utilitaire pour exécuter des requêtes SQL
 async function executeQuery(

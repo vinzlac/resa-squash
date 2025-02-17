@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "next lint",
     "init-db": "node scripts/init-db.mjs",
-    "postbuild": "node scripts/migrate.mjs"
+    "postbuild": "node scripts/migrate.mjs",
+    "migrate": "node scripts/migrate.mjs"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
