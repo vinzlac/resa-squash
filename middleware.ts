@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
     if (currentPath.startsWith('/admin')) {
       const response = await fetch(`${request.nextUrl.origin}/api/db`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Cookie': `token=${token}`
         },
@@ -42,16 +42,23 @@ export async function middleware(request: NextRequest) {
         })
       });
 
+      if (!response.ok) {
+        // Lire la réponse en tant que texte pour voir le contenu exact
+        const errorText = await response.text();
+        console.error('Erreur lors de la requête à /api/db:', errorText);
+        return NextResponse.redirect(new URL('/unauthorized', request.url));
+      }
+
       const data = await response.json();
-      if (!response.ok || data.rows.length === 0) {
+      if (data.rows.length === 0) {
         return NextResponse.redirect(new URL('/unauthorized', request.url));
       }
     }
 
     return NextResponse.next();
   } catch (error) {
-    console.error('Erreur de vérification du token:', error);
-    return NextResponse.redirect(new URL('/login', request.url));
+    console.error('Erreur lors de la requête à /api/db:', error);
+    return NextResponse.redirect(new URL('/unauthorized', request.url));
   }
 }
 
