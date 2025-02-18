@@ -1,24 +1,18 @@
-import { USER_ID } from './config';
+import { TeamRDecodedJwtToken } from '@/app/types/auth';
+import { cookies } from 'next/headers';
+import { decodeTeamRJwtToken } from '@/app/utils/auth';
+import { COOKIE_NAMES } from '@/app/constants/cookies';
 
-class ConnectedUser {
-  private static instance: ConnectedUser;
-  private _id: string;
-
-  private constructor() {
-    this._id = USER_ID;
+export async function getConnectedUser(): Promise<TeamRDecodedJwtToken | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAMES.TEAMR_TOKEN)?.value;
+  
+  if (!token) return null;
+  
+  try {
+    return decodeTeamRJwtToken(token);
+  } catch (error) {
+    console.error('Error getting connected user:', error);
+    return null;
   }
-
-  public static getInstance(): ConnectedUser {
-    if (!ConnectedUser.instance) {
-      ConnectedUser.instance = new ConnectedUser();
-    }
-    return ConnectedUser.instance;
-  }
-
-  get id(): string {
-    return this._id;
-  }
-}
-
-// Export d'une instance unique
-export const connectedUser = ConnectedUser.getInstance(); 
+} 

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Licensee } from '@/app/types/licensee';
-import { connectedUser } from '@/app/services/connectedUser';
 
 type SortDirection = 'asc' | 'desc';
 type SortField = 'firstName' | 'lastName';
@@ -22,7 +21,7 @@ export default function FavoritesPage() {
       try {
         const [licenseesResponse, favoritesResponse] = await Promise.all([
           fetch('/api/licensees'),
-          fetch(`/api/favorites?userId=${connectedUser.id}`)
+          fetch(`/api/favorites`)
         ]);
 
         if (!licenseesResponse.ok || !favoritesResponse.ok) {
@@ -54,7 +53,6 @@ export default function FavoritesPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: connectedUser.id,
           licenseeId,
           action
         }),

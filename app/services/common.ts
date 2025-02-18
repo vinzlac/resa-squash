@@ -6,11 +6,14 @@ import {
   GET_SESSION_URL,
   CUSTOM_ID,
   COORDINATES,
+  TEAMR_AUTH_URL,
 } from "./config";
 import { TrLicensee, TrSession, TrBookingResponse } from "./teamrTypes";
 import path from "path";
-import { TEAMR_CONFIG } from "../config/teamr";
 import { DayPlanning, CourtPlanning, TimeSlot } from "./types.js";
+import { Reservation } from '@/app/types/reservation';
+import { TeamRAuthRequest, TeamRAuthResponse } from '@/app/types/teamr';
+import { buildTeamRHeader } from '@/app/utils/auth';
 
 // Définir le chemin relatif correct
 const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
@@ -18,7 +21,7 @@ const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
 // const LICENCIES_FILE = "./allLicencies.json"; // si le fichier est dans le même dossier
 
 // Fonction pour charger ou récupérer les licenciés
-export async function getLicencies(): Promise<
+export async function getLicencies(token: string): Promise<
   Map<string, { firstName: string; lastName: string }>
 > {
   console.log("getLicencies");
@@ -45,7 +48,7 @@ export async function getLicencies(): Promise<
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       console.log("🔄 Fichier non trouvé. Récupération depuis l'API...");
-      return await fetchAllLicensees();
+      return await fetchAllLicensees(token);
     } else {
       throw error;
     }
@@ -53,24 +56,15 @@ export async function getLicencies(): Promise<
 }
 
 // Fonction pour récupérer tous les licenciés depuis l'API et les enregistrer en cache
-async function fetchAllLicensees(): Promise<
+async function fetchAllLicensees(token: string): Promise<
   Map<string, { firstName: string; lastName: string }>
 > {
   const firstClubId = Object.values(COURT_CLUB_IDS)[0];
   const url = `${GET_LICENSEE_URL}/${firstClubId}`;
 
-  console.log("USED API KEY : ", TEAMR_CONFIG.API_KEY);
-  console.log("USED BASE URL : ", TEAMR_CONFIG.BASE_URL);
-
   const response = await fetch(url, {
     method: "GET",
-    headers: {
-      Host: "app.teamr.eu",
-      Accept: "application/json, text/plain, */*",
-      "User-Agent": "HappyPeople/201 CFNetwork/1568.200.51 Darwin/24.1.0",
-      "Accept-Language": "fr-FR,fr;q=0.9",
-      Authorization: `Bearer ${TEAMR_CONFIG.API_KEY}`,
-    },
+    headers: buildTeamRHeader(token),
   });
 
   if (!response.ok) {
@@ -102,22 +96,15 @@ async function fetchAllLicensees(): Promise<
 // Fonction pour récupérer les sessions d'un court donné
 export async function fetchSessionsForCourt(
   clubId: string,
-  date: string
+  date: string,
+  token: string
 ): Promise<TrSession[]> {
-  // console.log("USED API KEY : ", TEAMR_CONFIG.API_KEY);
-  // console.log("USED BASE URL : ", TEAMR_CONFIG.BASE_URL);
+
   console.log("fetchSessionsForCourt for clubId : ", clubId);
   console.log("fetchSessionsForCourt for date : ", date);
   const response = await fetch(GET_SESSION_URL, {
     method: "POST",
-    headers: {
-      Host: "app.teamr.eu",
-      "Content-Type": "application/json",
-      "User-Agent": "HappyPeople/201 CFNetwork/1568.200.51 Darwin/24.1.0",
-      Accept: "application/json, text/plain, */*",
-      "Accept-Language": "fr-FR,fr;q=0.9",
-      Authorization: TEAMR_CONFIG.API_KEY,
-    },
+    headers: buildTeamRHeader(token),
     body: JSON.stringify({
       filters: { clubId, coordinates: COORDINATES, date },
       coordinates: COORDINATES,
@@ -143,9 +130,9 @@ export async function fetchSessionsForCourt(
 }
 
 // Fonction pour récupérer le planning complet
-export async function fetchPlanning(date: string): Promise<DayPlanning> {
+export async function fetchPlanning(date: string, token: string): Promise<DayPlanning> {
   console.log("fetchPlanning for DATE : ", date);
-  const licenseeMap = await getLicencies();
+  const licenseeMap = await getLicencies(token);
   console.log("licenseeMap size : ", licenseeMap.size);
   const courts: CourtPlanning[] = [];
 
@@ -153,7 +140,7 @@ export async function fetchPlanning(date: string): Promise<DayPlanning> {
     console.log("clubId : ", clubId);
     console.log("courtNumber : ", courtNumber);
 
-    const sessions = await fetchSessionsForCourt(clubId, date);
+    const sessions = await fetchSessionsForCourt(clubId, date, token);
     console.log("sessions count : ", sessions.length);
 
     // Trier les sessions par heure
@@ -195,29 +182,24 @@ export async function fetchPlanning(date: string): Promise<DayPlanning> {
 export async function bookSession(
   sessionId: string,
   userId: string,
-  friendUserId: string
+  friendUserId: string,
+  token: string
 ): Promise<TrBookingResponse> {
   try {
     const body = JSON.stringify({
       participant: {
         userId: userId,
         isPresent: "yes",
-        coordinates: [2.5864862369264747, 48.869659697477495], // Remplacez par les coordonnées réelles si nécessaire
+        coordinates: [2.5864862369264747, 48.869659697477495],
         friendUserId: friendUserId,
       },
       sessionId: sessionId,
       customId: CUSTOM_ID,
     });
-    console.log("booking body : ", body);
+
     const response = await fetch(BOOKING_URL, {
       method: "POST",
-      headers: {
-        Host: "app.teamr.eu",
-        "Content-Type": "application/json",
-        "User-Agent": "HappyPeople/201 CFNetwork/1568.200.51 Darwin/24.1.0",
-        Accept: "application/json, text/plain, */*",
-        Authorization: TEAMR_CONFIG.API_KEY,
-      },
+      headers: buildTeamRHeader(token),
       body: body,
     });
 
@@ -225,54 +207,99 @@ export async function bookSession(
       throw new Error(`Erreur HTTP : ${response.status}`);
     }
 
-    const result: TrBookingResponse = await response.json();
-    console.log("Réservation effectuée :", result);
-    return result;
+    return await response.json();
   } catch (error) {
     console.error("Erreur lors de la réservation :", error);
     throw error;
   }
 }
 
-
 export async function deleteBookSession(
-    sessionId: string,
-    userId: string,
-    friendUserId: string
-  ): Promise<TrBookingResponse> {
-    try {
-      const body = JSON.stringify({
-        participant: {
-          userId: userId,
-          isPresent: "no",
-          coordinates: [2.5864862369264747, 48.869659697477495], // Remplacez par les coordonnées réelles si nécessaire
-          friendUserId: friendUserId,
-        },
-        sessionId: sessionId,
-        customId: CUSTOM_ID,
-      });
-      console.log("delete booking body : ", body);
-      const response = await fetch(BOOKING_URL, {
-        method: "POST",
-        headers: {
-          Host: "app.teamr.eu",
-          "Content-Type": "application/json",
-          "User-Agent": "HappyPeople/201 CFNetwork/1568.200.51 Darwin/24.1.0",
-          Accept: "application/json, text/plain, */*",
-          Authorization: TEAMR_CONFIG.API_KEY,
-        },
-        body: body,
-      });
-  
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP : ${response.status}`);
-      }
-  
-      const result: TrBookingResponse = await response.json();
-      console.log("Suppression de réservation effectuée :", result);
-      return result;
-    } catch (error) {
-      console.error("Erreur lors de la suppression de la réservation :", error);
-      throw error;
+  sessionId: string,
+  userId: string,
+  friendUserId: string,
+  token: string
+): Promise<TrBookingResponse> {
+  try {
+    const body = JSON.stringify({
+      participant: {
+        userId: userId,
+        isPresent: "no",
+        coordinates: [2.5864862369264747, 48.869659697477495],
+        friendUserId: friendUserId,
+      },
+      sessionId: sessionId,
+      customId: CUSTOM_ID,
+    });
+
+    const response = await fetch(BOOKING_URL, {
+      method: "POST",
+      headers: buildTeamRHeader(token),
+      body: body,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP : ${response.status}`);
     }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Erreur lors de la suppression de la réservation :", error);
+    throw error;
   }
+}
+
+export async function getDailyReservations(date: string, token: string): Promise<Reservation[]> {
+  console.log("getDailyReservations for DATE : ", date);
+  const reservations: Reservation[] = [];
+  const planning = await fetchPlanning(date, token);
+
+  console.log("PLANNING : ", planning);
+  planning.courts.forEach(court => {
+    court.slots.forEach(slot => {
+      reservations.push({
+        id: slot.sessionId,
+        court: parseInt(court.courtNumber),
+        time: slot.time,
+        date: planning.date,
+        available: slot.isAvailable,
+        users: slot.isAvailable 
+          ? [] 
+          : slot.participants.map(participant => ({
+              id: participant.id,
+              firstName: participant.firstName,
+              lastName: participant.lastName
+            }))
+      });
+    });
+  });
+
+  return reservations;
+}
+
+export async function authenticateUser(email: string, password: string): Promise<TeamRAuthResponse> {
+  const authRequest: TeamRAuthRequest = {
+    credentials: { email, password },
+    customId: CUSTOM_ID,
+    deviceInfo: {
+      os: 'iOS 18.3.1',
+      model: 'iPhone 12 Pro',
+      brand: 'Apple',
+      version: '3.0.20',
+    },
+    coachAuthentication: false,
+  };
+
+  const response = await fetch(TEAMR_AUTH_URL, {
+    method: 'POST',
+    headers: buildTeamRHeader(),
+    body: JSON.stringify(authRequest),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Erreur d\'authentification TeamR');
+  }
+
+  return response.json();
+}

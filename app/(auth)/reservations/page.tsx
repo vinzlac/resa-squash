@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { format, addDays, subDays, isBefore, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import ReservationModal from '@/app/components/ReservationModal';
-import { connectedUser } from '@/app/services/connectedUser';
+import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 import DeleteReservationModal from '@/app/components/DeleteReservationModal';
 
 interface ReservationByTimeSlot {
@@ -17,6 +17,8 @@ interface ReservationByTimeSlot {
 }
 
 function ReservationsContent() {
+  const user = useConnectedUser();
+  const userId = user?.userId;
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +102,7 @@ function ReservationsContent() {
       console.log('Réservation confirmée:', {
         sessionId: selectedSlot.sessionId,
         time: selectedSlot.time,
-        participant1: connectedUser.id,
+        participant1: userId,
         participant2: participant2Id
       });
       
@@ -182,7 +184,7 @@ function ReservationsContent() {
                   <div className="w-3 h-3 left-3 -top-1 absolute transform rotate-45 bg-black"></div>
                 </div>
               </div>
-              {timeSlot.users[0]?.id === connectedUser.id && (
+              {timeSlot.users[0]?.id === userId && (
                 <button
                   onClick={() => handleDeleteClick(timeSlot.sessionId, timeSlot.time, timeSlot.users[1].id)}
                   className="ml-2 text-red-500 hover:text-red-700"
@@ -296,7 +298,6 @@ function ReservationsContent() {
               setSlotToDelete(null);
             }}
             sessionId={slotToDelete.sessionId}
-            userId={connectedUser.id}
             partnerId={slotToDelete.partnerId}
             onSuccess={fetchReservations}
             time={slotToDelete.time}

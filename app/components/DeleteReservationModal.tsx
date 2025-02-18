@@ -1,35 +1,40 @@
 'use client';
 
+import { useConnectedUser } from '@/app/hooks/useConnectedUser';
+
 interface DeleteReservationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  time: string;
   sessionId: string;
-  userId: string;
   partnerId: string;
   onSuccess: () => void;
+  time: string;
 }
 
 export default function DeleteReservationModal({
   isOpen,
   onClose,
   sessionId,
-  userId,
   partnerId,
   onSuccess,
   time,
 }: DeleteReservationModalProps) {
+  const user = useConnectedUser();
+  const userId = user?.userId;
+
   const handleDelete = async () => {
     try {
+      if (!userId) {
+        console.error('User not connected');
+        return;
+      }
+
       const response = await fetch(`/api/reservations/${sessionId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId,
-          partnerId,
-        }),
+        body: JSON.stringify({ userId, partnerId }),
       });
 
       if (!response.ok) {

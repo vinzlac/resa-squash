@@ -1,18 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getFavorites, addFavorite, removeFavorite } from '@/app/lib/db';
+import { getConnectedUser } from '@/app/services/connectedUser';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
-  console.log('GET /api/favorites - userId:', userId);
-
-  if (!userId) {
-    return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-  }
-
+export async function GET() {
   try {
+    const connectedUser = await getConnectedUser();
+    if (!connectedUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = connectedUser.userId
+
+    console.log('GET /api/favorites - userId:', userId);
+
     const favorites = await getFavorites(userId);
     console.log('Favorites found:', favorites);
     return NextResponse.json(favorites);
@@ -25,9 +27,17 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { userId, licenseeId, action } = await request.json();
+    const connectedUser = await getConnectedUser();
+    if (!connectedUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = connectedUser.userId
+
+    const body = await request.json();
+    const { licenseeId, action } = body;
 
     if (!userId || !licenseeId || !action) {
       return NextResponse.json(

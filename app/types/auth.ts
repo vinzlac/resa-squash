@@ -10,13 +10,21 @@ export interface LoginResponse {
   };
 }
 
-export interface DecodedToken {
+export interface TeamRDecodedJwtToken {
   email: string;
   exp: number;
   iat: number;
+  userId: string;
+  customId: string;
   // autres champs du token si nécessaire
 }
 
 export interface AuthorizedUsersResponse {
   emails: string[];
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+  rememberMe: boolean;
 } 

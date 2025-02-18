@@ -2,17 +2,19 @@
 
 import { Licensee } from '@/app/types/licensee';
 import { useState, useEffect } from 'react';
-import { connectedUser } from '@/app/services/connectedUser';
+import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 
 interface ReservationModalProps {
   isOpen: boolean;
   onClose: () => void;
   sessionId: string;
   time: string;
-  onConfirm: (partnerId: string) => void;
+  onConfirm: (participantId: string) => void;
 }
 
 export default function ReservationModal({ isOpen, onClose, sessionId, time, onConfirm }: ReservationModalProps) {
+  const user = useConnectedUser();
+  const userId = user?.userId;
   const [favorites, setFavorites] = useState<string[]>([]);
   const [licensees, setLicensees] = useState<Licensee[]>([]);
   const [selectedParticipant, setSelectedParticipant] = useState<string>('');
@@ -22,13 +24,14 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
 
   useEffect(() => {
     const fetchData = async () => {
+
       if (!isOpen || hasLoaded) return;
 
       try {
         setIsLoading(true);
         const [licenseesResponse, favoritesResponse] = await Promise.all([
           fetch('/api/licensees'),
-          fetch(`/api/favorites?userId=${connectedUser.id}`)
+          fetch(`/api/favorites`)
         ]);
 
         if (!licenseesResponse.ok || !favoritesResponse.ok) {
@@ -49,7 +52,7 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
     };
 
     fetchData();
-  }, [isOpen, hasLoaded]);
+  }, [isOpen, hasLoaded, userId]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -65,7 +68,10 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
 
   const handleConfirm = async () => {
     try {
-      const userId = connectedUser.id;
+      if (!userId) {
+        console.error('User not connected');
+        return;
+      }
 
       const response = await fetch(`/api/reservations/${sessionId}`, {
         method: 'PUT',
