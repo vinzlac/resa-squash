@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAuthorizedEmail } from '@/app/lib/auth';
 import { authenticateUser } from '@/app/services/teamrService';
+import { COOKIE_NAMES } from '@/app/constants/cookies';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
       });
 
       responseJson.cookies.set({
-        name: 'token',
+        name: COOKIE_NAMES.TEAMR_TOKEN,
         value: data.token,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

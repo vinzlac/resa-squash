@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { COOKIE_NAMES } from '@/app/constants/cookies';
 
 const publicPaths = ['/login', '/unauthorized'];
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value;
+  const token = request.cookies.get(COOKIE_NAMES.TEAMR_TOKEN)?.value;
   const currentPath = request.nextUrl.pathname;
   const isPublicPath = publicPaths.includes(currentPath);
 
