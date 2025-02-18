@@ -23,41 +23,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  try {
-    if (!token) throw new Error('No token');
-    const decoded = jwtDecode<DecodedToken>(token);
-    const email = decoded.email;
+  return NextResponse.next();
 
-    // Vérifier l'autorisation uniquement pour les routes admin
-    if (currentPath.startsWith('/admin')) {
-      const response = await fetch(`${request.nextUrl.origin}/api/auth/check-admin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          email
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erreur de vérification:', errorText);
-        return NextResponse.redirect(new URL('/unauthorized', request.url));
-      }
-
-      const data = await response.json();
-      if (!data.authorized) {
-        return NextResponse.redirect(new URL('/unauthorized', request.url));
-      }
-    }
-
-    return NextResponse.next();
-  } catch (error) {
-    console.error('Erreur lors de la requête à /api/db:', error);
-    return NextResponse.redirect(new URL('/unauthorized', request.url));
-  }
 }
 
 export const config = {
