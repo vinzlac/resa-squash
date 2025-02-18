@@ -32,9 +32,12 @@ export async function middleware(request: NextRequest) {
     if (currentPath.startsWith('/admin')) {
       const response = await fetch(`${request.nextUrl.origin}/api/db`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cookie': `token=${token}`
+        },
         body: JSON.stringify({
-          query: 'SELECT email FROM authorized_users WHERE email = $1',
+          queryType: 'check_auth',
           params: [email]
         })
       });
