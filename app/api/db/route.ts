@@ -12,7 +12,8 @@ const ALLOWED_QUERIES = {
 export async function POST(request: NextRequest) {
   try {
     // Vérifier le token
-    const token = request.cookies.get('token')?.value;
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
     if (!token) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }

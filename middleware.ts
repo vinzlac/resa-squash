@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cookie': `token=${token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           queryType: 'check_auth',
