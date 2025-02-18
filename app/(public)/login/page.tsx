@@ -4,10 +4,13 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserStore } from '../../stores/userStore';
 
-// Icône de squash en SVG
-const SquashIcon = () => (
+interface SquashIconProps {
+  className?: string;
+}
+
+const SquashIcon = ({ className = "w-20 h-20 mx-auto text-blue-600" }: SquashIconProps) => (
   <svg 
-    className="w-20 h-20 mx-auto text-blue-600"
+    className={className}
     viewBox="0 0 24 24" 
     fill="none" 
     stroke="currentColor"
@@ -64,6 +67,13 @@ function LoginContent() {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Veuillez entrer une adresse email valide');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -72,12 +82,16 @@ function LoginContent() {
         },
         body: JSON.stringify({ 
           email, 
-          password,
-          rememberMe 
+          password
         }),
       });
 
       const data = await response.json();
+
+      if (response.status === 403) {
+        setError('Votre compte n\'est pas autorisé à accéder à cette application. Veuillez contacter l\'administrateur.');
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Erreur lors de la connexion');

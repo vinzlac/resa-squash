@@ -26,7 +26,7 @@ const pool = new Pool({
 export const db = pool;
 
 // Fonction utilitaire pour exécuter des requêtes SQL
-async function executeQuery(
+export async function executeQuery(
   query: string,
   params: Array<string | number> = []
 ) {

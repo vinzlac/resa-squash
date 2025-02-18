@@ -17,6 +17,12 @@ console.log('POSTGRES_URL:', process.env.POSTGRES_URL); // Pour déboguer
 
 async function init() {
   try {
+    // Créer la base de données si elle n'existe pas
+    await pool.query(`
+      CREATE DATABASE IF NOT EXISTS ${process.env.POSTGRES_DATABASE}
+    `);
+    console.log('Base de données créée ou existante');
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS favorites (
         id SERIAL PRIMARY KEY,
@@ -36,8 +42,12 @@ async function init() {
     `);
     console.log('Test data inserted successfully');
   } catch (error) {
-    console.error('Failed to initialize database:', error);
-    process.exit(1);
+    if (error.code === '42P04') {
+      console.log('La base de données existe déjà');
+    } else {
+      console.error('Erreur lors de la création de la base de données:', error);
+      process.exit(1);
+    }
   } finally {
     await pool.end();
   }

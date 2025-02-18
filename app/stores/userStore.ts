@@ -1,17 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface UserProfile {
+interface User {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
+  isAuthorized?: boolean;
   DOB: string;
 }
 
 interface UserStore {
-  user: UserProfile | null;
-  setUser: (user: UserProfile | null) => void;
+  user: User | null;
+  setUser: (user: User | null) => void;
 }
 
 export const useUserStore = create<UserStore>()(

@@ -35,7 +35,7 @@ export default function AdminPage() {
                     Gestion des accès
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Gérer les utilisateurs autorisés à accéder à l'application
+                    Gérer les utilisateurs autorisés à accéder à l&apos;application
                   </p>
                 </div>
               </div>

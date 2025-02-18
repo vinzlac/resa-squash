@@ -1,6 +1,7 @@
 import { Reservation } from '@/app/types/reservation';
 import { TEAMR_CONFIG } from '@/app/config/teamr';
 import { fetchPlanning } from './common';
+import { TeamRAuthRequest, TeamRAuthResponse } from '@/app/types/teamr';
 
 class TeamrService {
   private baseUrl: string;
@@ -80,4 +81,39 @@ class TeamrService {
 }
 
 // Export d'une instance unique du service
-export const teamrService = new TeamrService(); 
+export const teamrService = new TeamrService();
+
+const TEAMR_AUTH_URL = 'https://app.teamr.eu/users/custom/authenticate/v2';
+const CUSTOM_ID = '5dd6b3961510c91d353b0833';
+
+export async function authenticateUser(email: string, password: string): Promise<TeamRAuthResponse> {
+  const authRequest: TeamRAuthRequest = {
+    credentials: { email, password },
+    customId: CUSTOM_ID,
+    deviceInfo: {
+      os: 'iOS 18.3.1',
+      model: 'iPhone 12 Pro',
+      brand: 'Apple',
+      version: '3.0.20',
+    },
+    coachAuthentication: false,
+  };
+
+  const response = await fetch(TEAMR_AUTH_URL, {
+    method: 'POST',
+    headers: {
+      'Host': 'app.teamr.eu',
+      'Content-Type': 'application/json',
+      'Accept': 'application/json, text/plain, */*',
+      'User-Agent': 'HappyPeople/201 CFNetwork/1568.200.51 Darwin/24.1.0',
+    },
+    body: JSON.stringify(authRequest),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Erreur d\'authentification TeamR');
+  }
+
+  return response.json();
+} 

@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtDecode } from 'jwt-decode';
+import { DecodedToken } from '@/app/types/auth';
 
-const publicPaths = ['/login'];
+const publicPaths = ['/login', '/unauthorized'];
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('authToken')?.value;
+export async function middleware(request: NextRequest) {
+  const token = request.cookies.get('token')?.value;
   const currentPath = request.nextUrl.pathname;
   const isPublicPath = publicPaths.includes(currentPath);
 
-  // Si pas de token et pas sur une page publique -> redirection login
   if (!token && !isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
@@ -16,16 +17,45 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Si token et sur une page publique -> redirection home
   if (token && isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  try {
+    if (!token) throw new Error('No token');
+    const decoded = jwtDecode<DecodedToken>(token);
+    const email = decoded.email;
+
+    // Vérifier l'autorisation uniquement pour les routes admin
+    if (currentPath.startsWith('/admin')) {
+      const response = await fetch(`${request.nextUrl.origin}/api/db`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: 'SELECT email FROM authorized_users WHERE email = $1',
+          params: [email]
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok || data.rows.length === 0) {
+        return NextResponse.redirect(new URL('/unauthorized', request.url));
+      }
+    }
+
+    return NextResponse.next();
+  } catch (error) {
+    console.error('Erreur de vérification du token:', error);
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/reservations/:path*',
+    '/admin/:path*',
+    '/settings/:path*'
+  ]
 }; 
