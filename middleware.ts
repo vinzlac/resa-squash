@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { jwtDecode } from 'jwt-decode';
-import { DecodedToken } from '@/app/types/auth';
 
 const publicPaths = ['/login', '/unauthorized'];
 
