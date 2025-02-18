@@ -30,27 +30,25 @@ export async function middleware(request: NextRequest) {
 
     // Vérifier l'autorisation uniquement pour les routes admin
     if (currentPath.startsWith('/admin')) {
-      const response = await fetch(`${request.nextUrl.origin}/api/db`, {
+      const response = await fetch(`${request.nextUrl.origin}/api/auth/check-admin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          queryType: 'check_auth',
-          params: [email]
+          email
         })
       });
 
       if (!response.ok) {
-        // Lire la réponse en tant que texte pour voir le contenu exact
         const errorText = await response.text();
-        console.error('Erreur lors de la requête à /api/db:', errorText);
+        console.error('Erreur de vérification:', errorText);
         return NextResponse.redirect(new URL('/unauthorized', request.url));
       }
 
       const data = await response.json();
-      if (data.rows.length === 0) {
+      if (!data.authorized) {
         return NextResponse.redirect(new URL('/unauthorized', request.url));
       }
     }
