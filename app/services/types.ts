@@ -14,6 +14,7 @@ export interface PlanningParticipant {
 
 export interface TimeSlot {
     time: string;
+    endTime: string;
     isAvailable: boolean;
     sessionId: string;
     participants: PlanningParticipant[];

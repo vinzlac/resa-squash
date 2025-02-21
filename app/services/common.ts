@@ -152,6 +152,7 @@ export async function fetchPlanning(date: string, token: string): Promise<DayPla
 
     const slots: TimeSlot[] = sortedSessions.map((session) => ({
       time: session.time,
+      endTime: session.endTime,
       isAvailable: session.yesParticipants.length === 0,
       sessionId: session._id,
       participants: session.yesParticipants.map((userId) => {
@@ -261,8 +262,10 @@ export async function getDailyReservations(date: string, token: string): Promise
         id: slot.sessionId,
         court: parseInt(court.courtNumber),
         time: slot.time,
+        endTime: slot.endTime,
         date: planning.date,
         available: slot.isAvailable,
+        participants: slot.participants.length,
         users: slot.isAvailable 
           ? [] 
           : slot.participants.map(participant => ({
