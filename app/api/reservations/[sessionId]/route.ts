@@ -1,6 +1,7 @@
 import { bookSession, deleteBookSession } from '@/app/services/common';
 import { NextRequest, NextResponse } from 'next/server';
 import { extractTeamrToken } from '@/app/utils/auth';
+import { ErrorCode, ApiError } from '@/app/types/errors';
 
 interface BookingRequest {
   userId: string;
@@ -10,7 +11,12 @@ interface BookingRequest {
 export async function PUT(request: NextRequest) {
   const token = extractTeamrToken(request);
   if (!token) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    return NextResponse.json({
+      error: {
+        code: ErrorCode.UNAUTHORIZED,
+        message: 'Authentication required'
+      }
+    }, { status: 401 });
   }
 
   try {
@@ -20,7 +26,12 @@ export async function PUT(request: NextRequest) {
     const sessionId = pathSegments[pathSegments.length - 1];
 
     if (!sessionId) {
-      return NextResponse.json({ error: 'sessionId est requis' }, { status: 400 });
+      return NextResponse.json({
+        error: {
+          code: ErrorCode.INVALID_REQUEST,
+          message: 'sessionId est requis'
+        }
+      }, { status: 400 });
     }
 
     // Extraction du body JSON
@@ -29,28 +40,35 @@ export async function PUT(request: NextRequest) {
 
     // Validation des données
     if (!userId || !partnerId) {
-      return NextResponse.json(
-        { error: 'userId et partnerId sont requis' },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        error: {
+          code: ErrorCode.INVALID_REQUEST,
+          message: 'userId et partnerId sont requis'
+        }
+      }, { status: 400 });
     }
 
     // Appel à la fonction bookSession
-    await bookSession(sessionId, userId, partnerId, token);
-
-    // Retour du résultat
-    return NextResponse.json({
-      sessionId,
-      userId,
-      partnerId
-    });
+    const result = await bookSession(sessionId, userId, partnerId, token);
+    return NextResponse.json(result);
 
   } catch (error) {
+    if ((error as ApiError).code === ErrorCode.SLOT_ALREADY_BOOKED) {
+      return NextResponse.json({
+        error: {
+          code: ErrorCode.SLOT_ALREADY_BOOKED,
+          message: (error as ApiError).message
+        }
+      }, { status: 403 });
+    }
+    
     console.error('Erreur lors de la réservation:', error);
-    return NextResponse.json(
-      { error: 'Erreur lors de la réservation' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      error: {
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Une erreur est survenue lors de la réservation'
+      }
+    }, { status: 500 });
   }
 }
 

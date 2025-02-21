@@ -14,6 +14,7 @@ import { DayPlanning, CourtPlanning, TimeSlot } from "./types.js";
 import { Reservation } from '@/app/types/reservation';
 import { TeamRAuthRequest, TeamRAuthResponse } from '@/app/types/teamr';
 import { buildTeamRHeader } from '@/app/utils/auth';
+import { ErrorCode, ApiError } from '@/app/types/errors';
 
 // Définir le chemin relatif correct
 const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
@@ -204,11 +205,22 @@ export async function bookSession(
       body: body,
     });
 
+    const responseText = await response.text();
+    
+    // Vérifier si la réponse contient "already booked"
+    if (responseText.includes("already booked")) {
+      throw {
+        code: ErrorCode.SLOT_ALREADY_BOOKED,
+        message: responseText
+      } as ApiError;
+    }
+
+    // Si ce n'est pas "already booked", on essaie de parser le JSON
     if (!response.ok) {
       throw new Error(`Erreur HTTP : ${response.status}`);
     }
 
-    return await response.json();
+    return responseText ? JSON.parse(responseText) : null;
   } catch (error) {
     console.error("Erreur lors de la réservation :", error);
     throw error;

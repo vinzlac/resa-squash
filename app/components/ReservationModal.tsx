@@ -3,6 +3,7 @@
 import { Licensee } from '@/app/types/licensee';
 import { useState, useEffect } from 'react';
 import { useConnectedUser } from '@/app/hooks/useConnectedUser';
+import { toast } from 'react-hot-toast';
 
 interface ReservationModalProps {
   isOpen: boolean;
@@ -66,30 +67,33 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
     favorites.includes(licensee.user[0]._id)
   );
 
-  const handleConfirm = async () => {
+  const handleReservation = async () => {
     try {
-      if (!userId) {
-        console.error('User not connected');
-        return;
-      }
-
+      setIsLoading(true);
       const response = await fetch(`/api/reservations/${sessionId}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ userId, partnerId: selectedParticipant }),
+        body: JSON.stringify({
+          userId,
+          partnerId: selectedParticipant
+        })
       });
 
-      if (response.ok) {
-        onConfirm(selectedParticipant);
-      } else {
-        console.error('Erreur lors de la réservation:', await response.json());
-        // Gérer l'erreur, par exemple en affichant un message à l'utilisateur
+      const data = await response.json();
+      
+      if (!response.ok) {
+        toast.error(data.error.message);
+        return;
       }
-    } catch (error) {
-      console.error('Erreur lors de la réservation:', error);
-      // Gérer l'erreur, par exemple en affichant un message à l'utilisateur
+
+      toast.success('Réservation effectuée avec succès');
+      onConfirm(selectedParticipant);
+    } catch (_error) {  // Utilisation de _error pour éviter l'erreur du linter
+      toast.error('Une erreur est survenue lors de la réservation');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -148,7 +152,7 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
               </button>
               <button
                 type="button"
-                onClick={handleConfirm}
+                onClick={handleReservation}
                 disabled={!selectedParticipant}
                 className={`inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
                   selectedParticipant
