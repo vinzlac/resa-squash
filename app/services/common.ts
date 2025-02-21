@@ -151,23 +151,28 @@ export async function fetchPlanning(date: string, token: string): Promise<DayPla
       return timeA - timeB;
     });
 
-    const slots: TimeSlot[] = sortedSessions.map((session) => ({
-      time: session.time,
-      endTime: session.endTime,
-      isAvailable: session.yesParticipants.length === 0,
-      sessionId: session._id,
-      participants: session.yesParticipants.map((userId) => {
-        const user = licenseeMap.get(userId) || {
-          firstName: "Inconnu",
-          lastName: "Inconnu",
-        };
-        return {
-          id: userId,
-          firstName: user.firstName,
-          lastName: user.lastName,
-        };
-      }),
-    }));
+    const slots: TimeSlot[] = sortedSessions.map((session) => {
+      // Fusionner les deux tableaux de participants en éliminant les doublons
+      const allParticipantIds = [...new Set([...session.participants, ...session.yesParticipants])];
+      
+      return {
+        time: session.time,
+        endTime: session.endTime,
+        isAvailable: session.participants.length === 0 && session.yesParticipants.length === 0,
+        sessionId: session._id,
+        participants: allParticipantIds.map((userId) => {
+          const user = licenseeMap.get(userId) || {
+            firstName: "Inconnu",
+            lastName: "Inconnu",
+          };
+          return {
+            id: userId,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          };
+        }),
+      };
+    });
 
     courts.push({
       courtNumber,
