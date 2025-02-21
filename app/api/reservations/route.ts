@@ -18,6 +18,19 @@ function compareTime(time1: string, time2: string): boolean {
   return totalMinutes1 >= totalMinutes2;
 }
 
+function isTimeInRange(time: string, endTime: string, fromTime: string | null, toTime: string | null): boolean {
+  // Si aucun filtre n'est appliqué, on accepte le créneau
+  if (!fromTime && !toTime) return true;
+  
+  // Vérifier la borne inférieure
+  if (fromTime && !compareTime(time, fromTime)) return false;
+  
+  // Vérifier la borne supérieure
+  if (toTime && compareTime(endTime, toTime)) return false;
+  
+  return true;
+}
+
 export async function GET(request: NextRequest) {
   const token = extractTeamrToken(request);
   if (!token) {
@@ -28,27 +41,39 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
     const fromTime = searchParams.get('fromTime');
+    const toTime = searchParams.get('toTime');
 
     if (!date) {
       return Response.json({ error: 'Date parameter is required' }, { status: 400 });
     }
 
-    // Valider le format de fromTime si présent
+    // Valider le format des paramètres de temps
     if (fromTime && !isValidTimeFormat(fromTime)) {
       return Response.json({ 
         error: 'Invalid fromTime format. Expected format: HHhMM (e.g., 12H00)' 
       }, { status: 400 });
     }
 
+    if (toTime && !isValidTimeFormat(toTime)) {
+      return Response.json({ 
+        error: 'Invalid toTime format. Expected format: HHhMM (e.g., 12H00)' 
+      }, { status: 400 });
+    }
+
+    // Vérifier que toTime est après fromTime si les deux sont spécifiés
+    if (fromTime && toTime && !compareTime(toTime, fromTime)) {
+      return Response.json({ 
+        error: 'toTime must be after fromTime' 
+      }, { status: 400 });
+    }
+
     console.log('GET /reservations - Fetching reservations for date:', date);
     let reservations = await getDailyReservations(date, token);
 
-    // Filtrer les réservations si fromTime est spécifié
-    if (fromTime) {
-      reservations = reservations.filter(reservation => 
-        compareTime(reservation.time, fromTime)
-      );
-    }
+    // Filtrer les réservations selon la plage horaire
+    reservations = reservations.filter(reservation => 
+      isTimeInRange(reservation.time, reservation.endTime, fromTime, toTime)
+    );
 
     return NextResponse.json(reservations);
   } catch (error) {
