@@ -2,6 +2,7 @@ export interface User {
   id: string;
   firstName: string;
   lastName: string;
+  yes: boolean;
 }
 
 export interface Reservation {

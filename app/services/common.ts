@@ -169,6 +169,7 @@ export async function fetchPlanning(date: string, token: string): Promise<DayPla
             id: userId,
             firstName: user.firstName,
             lastName: user.lastName,
+            yes: session.yesParticipants.includes(userId)
           };
         }),
       };
@@ -288,7 +289,8 @@ export async function getDailyReservations(date: string, token: string): Promise
           : slot.participants.map(participant => ({
               id: participant.id,
               firstName: participant.firstName,
-              lastName: participant.lastName
+              lastName: participant.lastName,
+              yes: participant.yes
             }))
       });
     });

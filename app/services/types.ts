@@ -10,6 +10,7 @@ export interface PlanningParticipant {
     id: string;
     firstName: string;
     lastName: string;
+    yes: boolean;
 }
 
 export interface TimeSlot {
