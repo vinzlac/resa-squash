@@ -90,7 +90,8 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
 
       toast.success('Réservation effectuée avec succès');
       onConfirm(selectedParticipant);
-    } catch (_error) {  // Utilisation de _error pour éviter l'erreur du linter
+    } catch (error) {  // On garde le paramètre error pour le logging
+      console.error('Erreur lors de la réservation:', error);
       toast.error('Une erreur est survenue lors de la réservation');
     } finally {
       setIsLoading(false);
