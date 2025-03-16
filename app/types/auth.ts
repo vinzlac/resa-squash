@@ -1,3 +1,5 @@
+import { UserRight } from './rights';
+
 export interface LoginResponse {
   success: boolean;
   user: {
@@ -7,6 +9,7 @@ export interface LoginResponse {
     email: string;
     DOB: string;
     isAuthorized: boolean;
+    rights: UserRight[];
   };
 }
 

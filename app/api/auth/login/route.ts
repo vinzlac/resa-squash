@@ -3,6 +3,7 @@ import { isAuthorizedEmail } from '@/app/lib/auth';
 import { authenticateUser } from '@/app/services/common';
 import { COOKIE_NAMES } from '@/app/constants/cookies';
 import { decodeTeamRJwtToken } from '@/app/utils/auth';
+import { getUserRights } from '@/app/services/rightsService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest) {
       const data = await authenticateUser(email, password);
       const decodedToken = decodeTeamRJwtToken(data.token);
       
+      // Récupérer les droits de l'utilisateur
+      const userRights = await getUserRights(decodedToken.userId);
+      
       const responseJson = NextResponse.json({
         success: true,
         user: {
@@ -27,7 +31,8 @@ export async function POST(request: NextRequest) {
           lastName: data.user.lastName,
           email: data.user.email,
           DOB: data.user.DOB,
-          isAuthorized: true
+          isAuthorized: true,
+          rights: userRights
         }
       });
 
