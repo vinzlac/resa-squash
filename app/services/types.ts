@@ -10,6 +10,7 @@ export interface PlanningParticipant {
     id: string;
     firstName: string;
     lastName: string;
+    email: string;
     yes: boolean;
 }
 

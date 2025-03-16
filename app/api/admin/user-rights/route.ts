@@ -1,0 +1,90 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getUserRights, addUserRight, removeUserRight, getAllUserRights, getAuthorizedUsersWithNames } from '@/app/services/rightsService';
+import { UserRight } from '@/app/types/rights';
+import { ApiErrorResponse, ApiSuccessResponse } from '@/app/types/api';
+import { mockUsers, mockUserRights } from '@/app/mocks/userRights';
+
+// Set to true to use mock data, false to use real data
+const USE_MOCK_DATA = true;
+
+export async function GET(request: NextRequest) {
+  try {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId');
+    
+    if (USE_MOCK_DATA) {
+      if (userId) {
+        // Get rights for a specific user
+        const userRights = mockUserRights.find(ur => ur.userId === userId);
+        return NextResponse.json({ rights: userRights?.rights || [] });
+      } else {
+        // Get all users with their rights
+        return NextResponse.json({ 
+          users: mockUsers,
+          userRights: mockUserRights
+        });
+      }
+    } else {
+      if (userId) {
+        // Get rights for a specific user
+        const rights = await getUserRights(userId);
+        return NextResponse.json({ rights });
+      } else {
+        // Get all users with their rights
+        const users = await getAuthorizedUsersWithNames();
+        const allRights = await getAllUserRights();
+        
+        return NextResponse.json({ 
+          users,
+          userRights: allRights
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching user rights:', error);
+    return NextResponse.json(
+      { error: 'Erreur lors de la récupération des droits utilisateur' } as ApiErrorResponse,
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { userId, right, action } = await request.json();
+
+    if (!userId || !right || !['add', 'remove'].includes(action)) {
+      return NextResponse.json(
+        { error: 'Paramètres invalides' } as ApiErrorResponse,
+        { status: 400 }
+      );
+    }
+
+    // Validate that right is a valid UserRight
+    if (!Object.values(UserRight).includes(right as UserRight)) {
+      return NextResponse.json(
+        { error: 'Droit utilisateur invalide' } as ApiErrorResponse,
+        { status: 400 }
+      );
+    }
+
+    if (USE_MOCK_DATA) {
+      // For mock data, we'll just return success without actually modifying anything
+      return NextResponse.json({ success: true } as ApiSuccessResponse);
+    } else {
+      if (action === 'add') {
+        await addUserRight(userId, right as UserRight);
+      } else {
+        await removeUserRight(userId, right as UserRight);
+      }
+
+      return NextResponse.json({ success: true } as ApiSuccessResponse);
+    }
+  } catch (error) {
+    console.error('Error updating user rights:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Erreur serveur' } as ApiErrorResponse,
+      { status: 500 }
+    );
+  }
+} 

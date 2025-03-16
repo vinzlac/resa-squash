@@ -15,6 +15,10 @@ import { Reservation } from '@/app/types/reservation';
 import { TeamRAuthRequest, TeamRAuthResponse } from '@/app/types/teamr';
 import { buildTeamRHeader } from '@/app/utils/auth';
 import { ErrorCode, ApiError } from '@/app/types/errors';
+import { Licensee } from '@/app/types/licensee';
+
+// Variable statique pour stocker la map des licenciés par email
+export let licenseesMapByEmail: Map<string, Licensee> = new Map();
 
 // Définir le chemin relatif correct
 const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
@@ -22,25 +26,26 @@ const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
 // const LICENCIES_FILE = "./allLicencies.json"; // si le fichier est dans le même dossier
 
 // Fonction pour charger ou récupérer les licenciés
-export async function getLicencies(token: string): Promise<
-  Map<string, { firstName: string; lastName: string }>
+export async function getLicenciesMapByUserId(token: string): Promise<
+  Map<string, Licensee>
 > {
   console.log("getLicencies");
   try {
     console.log("📂 Chargement des licenciés depuis le fichier local...");
     const data = await fs.readFile(LICENCIES_FILE, "utf-8");
 
-    const licenseeMap = new Map<
-      string,
-      { firstName: string; lastName: string }
-    >();
+    const licenseeMap = new Map<string, Licensee>();
 
     JSON.parse(data).forEach((licencie: TrLicensee) => {
       if (licencie.user.length > 0) {
         const user = licencie.user[0];
         licenseeMap.set(user._id, {
-          firstName: user.firstName,
-          lastName: user.lastName,
+          user: [{
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email
+          }]
         });
       }
     });
@@ -56,9 +61,56 @@ export async function getLicencies(token: string): Promise<
   }
 }
 
+// Fonction pour charger ou récupérer les licenciés avec l'email comme clé
+export async function getLicenciesMapByEmail(token: string): Promise<
+  Map<string, Licensee>
+> {
+  console.log("getLicenciesByEmail");
+  
+  // Si la map statique est déjà remplie, on la retourne directement
+  if (licenseesMapByEmail.size > 0) {
+    console.log("📂 Utilisation de la map en mémoire...");
+    return licenseesMapByEmail;
+  }
+  
+  try {
+    console.log("📂 Chargement des licenciés depuis le fichier local...");
+    const data = await fs.readFile(LICENCIES_FILE, "utf-8");
+
+    const licenseeMap = new Map<string, Licensee>();
+
+    JSON.parse(data).forEach((licencie: TrLicensee) => {
+      if (licencie.user.length > 0) {
+        const user = licencie.user[0];
+        if (user.email) { // Vérifier que l'email existe
+          licenseeMap.set(user.email, {
+            user: [{
+              _id: user._id,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email
+            }]
+          });
+        }
+      }
+    });
+
+    // Mettre à jour la map statique
+    licenseesMapByEmail = licenseeMap;
+    return licenseeMap;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      console.log("🔄 Fichier non trouvé. Récupération depuis l'API...");
+      return await fetchAllLicenseesByEmail(token);
+    } else {
+      throw error;
+    }
+  }
+}
+
 // Fonction pour récupérer tous les licenciés depuis l'API et les enregistrer en cache
 async function fetchAllLicensees(token: string): Promise<
-  Map<string, { firstName: string; lastName: string }>
+  Map<string, Licensee>
 > {
   const firstClubId = Object.values(COURT_CLUB_IDS)[0];
   const url = `${GET_LICENSEE_URL}/${firstClubId}`;
@@ -76,21 +128,65 @@ async function fetchAllLicensees(token: string): Promise<
   }
 
   const data = (await response.json()) as TrLicensee[];
-  const licenseeMap = new Map<
-    string,
-    { firstName: string; lastName: string }
-  >();
+  const licenseeMap = new Map<string, Licensee>();
 
   data.forEach((licencie) => {
     if (licencie.user.length > 0) {
       const user = licencie.user[0];
       licenseeMap.set(user._id, {
-        firstName: user.firstName,
-        lastName: user.lastName,
+        user: [{
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email
+        }]
       });
     }
   });
 
+  return licenseeMap;
+}
+
+// Fonction pour récupérer tous les licenciés depuis l'API avec l'email comme clé
+async function fetchAllLicenseesByEmail(token: string): Promise<
+  Map<string, Licensee>
+> {
+  const firstClubId = Object.values(COURT_CLUB_IDS)[0];
+  const url = `${GET_LICENSEE_URL}/${firstClubId}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: buildTeamRHeader(token),
+  });
+
+  if (!response.ok) {
+    console.error(
+      `❌ Erreur HTTP ${response.status} lors de la récupération des licenciés.`
+    );
+    return new Map();
+  }
+
+  const data = (await response.json()) as TrLicensee[];
+  const licenseeMap = new Map<string, Licensee>();
+
+  data.forEach((licencie) => {
+    if (licencie.user.length > 0) {
+      const user = licencie.user[0];
+      if (user.email) { // Vérifier que l'email existe
+        licenseeMap.set(user.email, {
+          user: [{
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email
+          }]
+        });
+      }
+    }
+  });
+
+  // Mettre à jour la map statique
+  licenseesMapByEmail = licenseeMap;
   return licenseeMap;
 }
 
@@ -133,8 +229,8 @@ export async function fetchSessionsForCourt(
 // Fonction pour récupérer le planning complet
 export async function fetchPlanning(date: string, token: string): Promise<DayPlanning> {
   console.log("fetchPlanning for DATE : ", date);
-  const licenseeMap = await getLicencies(token);
-  console.log("licenseeMap size : ", licenseeMap.size);
+  const licenseeMapByUserId = await getLicenciesMapByUserId(token);
+  console.log("licenseeMap size : ", licenseeMapByUserId.size);
   const courts: CourtPlanning[] = [];
 
   for (const [courtNumber, clubId] of Object.entries(COURT_CLUB_IDS)) {
@@ -161,14 +257,19 @@ export async function fetchPlanning(date: string, token: string): Promise<DayPla
         isAvailable: session.participants.length === 0 && session.yesParticipants.length === 0,
         sessionId: session._id,
         participants: allParticipantIds.map((userId) => {
-          const user = licenseeMap.get(userId) || {
+          const licensee = licenseeMapByUserId.get(userId);
+          const user = licensee ? licensee.user[0] : {
+            _id: userId,
             firstName: "Inconnu",
             lastName: "Inconnu",
+            email: ""
           };
+          
           return {
-            id: userId,
+            id: user._id,
             firstName: user.firstName,
             lastName: user.lastName,
+            email: user.email,
             yes: session.yesParticipants.includes(userId)
           };
         }),
@@ -290,6 +391,7 @@ export async function getDailyReservations(date: string, token: string): Promise
               id: participant.id,
               firstName: participant.firstName,
               lastName: participant.lastName,
+              email: participant.email,
               yes: participant.yes
             }))
       });
@@ -323,5 +425,12 @@ export async function authenticateUser(email: string, password: string): Promise
     throw new Error(errorData.message || 'Erreur d\'authentification TeamR');
   }
 
-  return response.json();
+  const authResponse = await response.json();
+  
+  // Initialiser la map des licenciés par email après l'authentification
+  console.log("🔄 Initialisation de la map des licenciés par email...");
+  await fetchAllLicenseesByEmail(authResponse.token);
+  console.log(`✅ Map des licenciés par email initialisée avec ${licenseesMapByEmail.size} entrées`);
+  
+  return authResponse;
 }
