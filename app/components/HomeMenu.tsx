@@ -6,7 +6,7 @@ import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 
 export default function HomeMenu() {
-  const pathname = usePathname();
+  const pathname = usePathname() || '';
   
   const getBreadcrumb = () => {
     const path = pathname.split('/').filter(Boolean);
@@ -107,6 +107,19 @@ export default function HomeMenu() {
                                 } block px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
                               >
                                 Gestion des accès
+                              </Link>
+                            )}
+                          </Menu.Item>
+                          
+                          <Menu.Item>
+                            {({ active }) => (
+                              <Link
+                                href="/admin/rights"
+                                className={`${
+                                  active ? 'bg-gray-100 dark:bg-gray-700' : ''
+                                } block px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
+                              >
+                                Gestion des droits
                               </Link>
                             )}
                           </Menu.Item>

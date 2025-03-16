@@ -22,7 +22,7 @@ function ReservationsContent() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams() || new URLSearchParams();
   const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
 
   // Formatage de la date
