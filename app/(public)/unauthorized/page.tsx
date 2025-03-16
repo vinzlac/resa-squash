@@ -22,13 +22,13 @@ export default function UnauthorizedPage() {
       </div>
       <h1 className="text-3xl font-bold mb-4 text-gray-800 dark:text-white">Accès non autorisé</h1>
       <p className="text-lg mb-8 text-gray-600 dark:text-gray-300">
-        Vous n'avez pas les droits nécessaires pour accéder à cette page.
+        Vous n&apos;avez pas les droits nécessaires pour accéder à cette page.
       </p>
       <Link 
         href="/"
         className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
       >
-        Retour à l'accueil
+        Retour à l&apos;accueil
       </Link>
     </div>
   );
