@@ -3,12 +3,24 @@ import { getUserRights, addUserRight, removeUserRight, getAllUserRights, getAuth
 import { UserRight } from '@/app/types/rights';
 import { ApiErrorResponse, ApiSuccessResponse } from '@/app/types/api';
 import { mockUsers, mockUserRights } from '@/app/mocks/userRights';
+import { ensureLicenseesMapByEmailIsInitialized, setGlobalTeamrToken } from '@/app/services/common';
 
 // Set to true to use mock data, false to use real data
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 export async function GET(request: NextRequest) {
   try {
+    // Récupérer le token depuis les cookies
+    const token = request.cookies.get('teamr_token')?.value;
+    
+    // Stocker le token global si disponible
+    if (token) {
+      setGlobalTeamrToken(token);
+    }
+    
+    // Initialiser la map si nécessaire
+    await ensureLicenseesMapByEmailIsInitialized();
+    
     const url = new URL(request.url);
     const userId = url.searchParams.get('userId');
     

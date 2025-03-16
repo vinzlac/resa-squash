@@ -11,37 +11,48 @@ import { licenseesMapByEmail } from '@/app/services/common';
 // );
 
 export async function getAuthorizedUsersWithNames(): Promise<UserWithName[]> {
-  // Récupérer uniquement les emails des utilisateurs autorisés
-  const result = await executeQuery(
-    'SELECT email FROM authorized_users ORDER BY email ASC'
-  );
-  
-  const authorizedUsers: UserWithName[] = [];
-  
-  // Utiliser la map licenseesMapByEmail pour enrichir les données
-  for (const row of result) {
-    const email = row.email;
-    const licensee = licenseesMapByEmail.get(email);
+  try {
+    // Récupérer uniquement les emails des utilisateurs autorisés
+    const result = await executeQuery(
+      'SELECT email FROM authorized_users ORDER BY email ASC'
+    );
     
-    // Ne garder que les utilisateurs qui existent dans la map
-    if (licensee && licensee.user && licensee.user.length > 0) {
-      const user = licensee.user[0];
-      authorizedUsers.push({
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: email
-      });
+    console.log("licenseesMapByEmail size : ", licenseesMapByEmail.size);
+
+    const authorizedUsers: UserWithName[] = [];
+    
+    // Utiliser la map licenseesMapByEmail pour enrichir les données
+    for (const row of result) {
+      const email = row.email;
+      const licensee = licenseesMapByEmail.get(email);
+      
+      // Ne garder que les utilisateurs qui existent dans la map
+      if (licensee && licensee.user && licensee.user.length > 0) {
+        const user = licensee.user[0];
+        authorizedUsers.push({
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: email
+        });
+      } else {
+        console.log(`Utilisateur autorisé avec email ${email} non trouvé dans la map`);
+      }
     }
+    
+    console.log(`Nombre d'utilisateurs autorisés trouvés: ${authorizedUsers.length}`);
+    
+    // Trier par nom puis prénom
+    return authorizedUsers.sort((a, b) => {
+      if (a.lastName !== b.lastName) {
+        return a.lastName.localeCompare(b.lastName);
+      }
+      return a.firstName.localeCompare(b.firstName);
+    });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des utilisateurs autorisés:', error);
+    return [];
   }
-  
-  // Trier par nom puis prénom
-  return authorizedUsers.sort((a, b) => {
-    if (a.lastName !== b.lastName) {
-      return a.lastName.localeCompare(b.lastName);
-    }
-    return a.firstName.localeCompare(b.firstName);
-  });
 }
 
 export async function getUserRights(userId: string): Promise<UserRight[]> {

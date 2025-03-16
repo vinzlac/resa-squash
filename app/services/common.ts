@@ -20,6 +20,19 @@ import { Licensee } from '@/app/types/licensee';
 // Variable statique pour stocker la map des licenciés par email
 export let licenseesMapByEmail: Map<string, Licensee> = new Map();
 
+// Variable pour stocker le token
+let globalTeamrToken: string | undefined;
+
+// Fonction pour définir le token global
+export function setGlobalTeamrToken(token: string): void {
+  globalTeamrToken = token;
+}
+
+// Fonction pour récupérer le token global
+export function getGlobalTeamrToken(): string | undefined {
+  return globalTeamrToken;
+}
+
 // Définir le chemin relatif correct
 const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
 // ou
@@ -65,7 +78,7 @@ export async function getLicenciesMapByUserId(token: string): Promise<
 export async function getLicenciesMapByEmail(token: string): Promise<
   Map<string, Licensee>
 > {
-  console.log("getLicenciesByEmail");
+  console.log("getLicenciesMapByEmail");
   
   // Si la map statique est déjà remplie, on la retourne directement
   if (licenseesMapByEmail.size > 0) {
@@ -97,11 +110,15 @@ export async function getLicenciesMapByEmail(token: string): Promise<
 
     // Mettre à jour la map statique
     licenseesMapByEmail = licenseeMap;
+
+    console.log("final licenseesMapByEmail size : ", licenseesMapByEmail.size);
     return licenseeMap;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       console.log("🔄 Fichier non trouvé. Récupération depuis l'API...");
-      return await fetchAllLicenseesByEmail(token);
+      const licenseeMap = await fetchAllLicenseesByEmail(token);
+      console.log("final licenseesMapByEmail size : ", licenseeMap.size);
+      return licenseeMap;
     } else {
       throw error;
     }
@@ -151,6 +168,7 @@ async function fetchAllLicensees(token: string): Promise<
 async function fetchAllLicenseesByEmail(token: string): Promise<
   Map<string, Licensee>
 > {
+  console.log("fetchAllLicenseesByEmail calling url : ", GET_LICENSEE_URL);
   const firstClubId = Object.values(COURT_CLUB_IDS)[0];
   const url = `${GET_LICENSEE_URL}/${firstClubId}`;
 
@@ -427,10 +445,32 @@ export async function authenticateUser(email: string, password: string): Promise
 
   const authResponse = await response.json();
   
+  // Stocker le token global
+  setGlobalTeamrToken(authResponse.token);
+  
   // Initialiser la map des licenciés par email après l'authentification
   console.log("🔄 Initialisation de la map des licenciés par email...");
-  await fetchAllLicenseesByEmail(authResponse.token);
+  await getLicenciesMapByEmail(authResponse.token);
   console.log(`✅ Map des licenciés par email initialisée avec ${licenseesMapByEmail.size} entrées`);
   
   return authResponse;
+}
+
+// Fonction pour s'assurer que la map est initialisée
+export async function ensureLicenseesMapByEmailIsInitialized(tokenParam?: string): Promise<void> {
+  console.log("Vérification de l'initialisation de licenseesMapByEmail...");
+  console.log("Taille actuelle: ", licenseesMapByEmail.size);
+  
+  if (licenseesMapByEmail.size === 0) {
+    // Utiliser le token passé en paramètre ou le token global
+    const token = tokenParam || globalTeamrToken;
+    
+    if (token) {
+      console.log("Initialisation de licenseesMapByEmail...");
+      await getLicenciesMapByEmail(token);
+      console.log("licenseesMapByEmail initialisée avec", licenseesMapByEmail.size, "entrées");
+    } else {
+      console.warn("Aucun token disponible pour initialiser licenseesMapByEmail");
+    }
+  }
 }
