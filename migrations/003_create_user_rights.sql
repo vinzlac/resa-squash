@@ -10,4 +10,4 @@ CREATE TABLE IF NOT EXISTS user_rights (
 CREATE INDEX IF NOT EXISTS idx_user_rights_user_id ON user_rights(user_id);
 
 -- Add comment
-COMMENT ON TABLE user_rights IS 'Table storing user rights and permissions'; 
+COMMENT ON TABLE user_rights IS 'Table storing user rights and permissions';
