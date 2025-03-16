@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
+import { useUserRights } from '@/app/hooks/useUserRights';
 
 export default function HomeMenu() {
   const pathname = usePathname() || '';
+  const { isAdmin } = useUserRights();
   
   const getBreadcrumb = () => {
     const path = pathname.split('/').filter(Boolean);
@@ -64,71 +66,73 @@ export default function HomeMenu() {
                 )}
               </Menu.Item>
 
-              <Menu.Item>
-                {({ active }) => (
-                  <Menu as="div" className="relative w-full">
-                    <Menu.Button
-                      className={`${
-                        active ? 'bg-gray-100 dark:bg-gray-700' : ''
-                      } flex w-full items-center justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
-                    >
-                      <span>Admin</span>
-                      <svg 
-                        className="ml-2 h-4 w-4" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
+              {isAdmin() && (
+                <Menu.Item>
+                  {({ active }) => (
+                    <Menu as="div" className="relative w-full">
+                      <Menu.Button
+                        className={`${
+                          active ? 'bg-gray-100 dark:bg-gray-700' : ''
+                        } flex w-full items-center justify-between px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
                       >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" 
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </Menu.Button>
-                    <Transition
-                      as={Fragment}
-                      enter="transition ease-out duration-100"
-                      enterFrom="transform opacity-0 scale-95"
-                      enterTo="transform opacity-100 scale-100"
-                      leave="transition ease-in duration-75"
-                      leaveFrom="transform opacity-100 scale-100"
-                      leaveTo="transform opacity-0 scale-95"
-                    >
-                      <Menu.Items className="absolute left-full top-0 ml-1 w-48 origin-top-left rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                        <div className="py-1">
-                          <Menu.Item>
-                            {({ active }) => (
-                              <Link
-                                href="/admin/access"
-                                className={`${
-                                  active ? 'bg-gray-100 dark:bg-gray-700' : ''
-                                } block px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
-                              >
-                                Gestion des accès
-                              </Link>
-                            )}
-                          </Menu.Item>
-                          
-                          <Menu.Item>
-                            {({ active }) => (
-                              <Link
-                                href="/admin/rights"
-                                className={`${
-                                  active ? 'bg-gray-100 dark:bg-gray-700' : ''
-                                } block px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
-                              >
-                                Gestion des droits
-                              </Link>
-                            )}
-                          </Menu.Item>
-                        </div>
-                      </Menu.Items>
-                    </Transition>
-                  </Menu>
-                )}
-              </Menu.Item>
+                        <span>Admin</span>
+                        <svg 
+                          className="ml-2 h-4 w-4" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth="2" 
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </Menu.Button>
+                      <Transition
+                        as={Fragment}
+                        enter="transition ease-out duration-100"
+                        enterFrom="transform opacity-0 scale-95"
+                        enterTo="transform opacity-100 scale-100"
+                        leave="transition ease-in duration-75"
+                        leaveFrom="transform opacity-100 scale-100"
+                        leaveTo="transform opacity-0 scale-95"
+                      >
+                        <Menu.Items className="absolute left-full top-0 ml-1 w-48 origin-top-left rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                          <div className="py-1">
+                            <Menu.Item>
+                              {({ active }) => (
+                                <Link
+                                  href="/admin/access"
+                                  className={`${
+                                    active ? 'bg-gray-100 dark:bg-gray-700' : ''
+                                  } block px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
+                                >
+                                  Gestion des accès
+                                </Link>
+                              )}
+                            </Menu.Item>
+                            
+                            <Menu.Item>
+                              {({ active }) => (
+                                <Link
+                                  href="/admin/rights"
+                                  className={`${
+                                    active ? 'bg-gray-100 dark:bg-gray-700' : ''
+                                  } block px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
+                                >
+                                  Gestion des droits
+                                </Link>
+                              )}
+                            </Menu.Item>
+                          </div>
+                        </Menu.Items>
+                      </Transition>
+                    </Menu>
+                  )}
+                </Menu.Item>
+              )}
             </div>
           </Menu.Items>
         </Transition>

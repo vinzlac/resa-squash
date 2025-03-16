@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUserStore } from '../stores/userStore';
+import { useUserRights } from '../hooks/useUserRights';
 
 interface AdminGuardProps {
   children: React.ReactNode;
@@ -10,18 +10,19 @@ interface AdminGuardProps {
 
 export default function AdminGuard({ children }: AdminGuardProps) {
   const router = useRouter();
-  const user = useUserStore((state) => state.user);
+  const { isAdmin } = useUserRights();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.isAuthorized) {
+    // Vérifier si l'utilisateur a les droits d'administration
+    if (!isAdmin()) {
       router.push('/unauthorized');
     } else {
       setIsLoading(false);
     }
-  }, [user, router]);
+  }, [isAdmin, router]);
 
-  if (isLoading || !user?.isAuthorized) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
