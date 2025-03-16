@@ -12,15 +12,24 @@ export default function AdminGuard({ children }: AdminGuardProps) {
   const router = useRouter();
   const { isAdmin } = useUserRights();
   const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Vérifier si l'utilisateur a les droits d'administration
-    if (!isAdmin()) {
-      router.push('/unauthorized');
-    } else {
-      setIsLoading(false);
-    }
-  }, [isAdmin, router]);
+    // Marquer que nous sommes côté client
+    setIsClient(true);
+    
+    // Attendre un court instant pour s'assurer que les droits sont chargés
+    const timer = setTimeout(() => {
+      // Vérifier si l'utilisateur a les droits d'administration
+      if (isClient && !isAdmin()) {
+        router.push('/unauthorized');
+      } else if (isClient) {
+        setIsLoading(false);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [isAdmin, router, isClient]);
 
   if (isLoading) {
     return (
