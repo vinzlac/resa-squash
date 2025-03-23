@@ -4,21 +4,29 @@ import { Licensee } from '@/app/types/licensee';
 import { useState, useEffect } from 'react';
 import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 import { toast } from 'react-hot-toast';
+import { useUserRights } from '@/app/hooks/useUserRights';
+import { useUserStore } from '@/app/stores/userStore';
 
 interface ReservationModalProps {
   isOpen: boolean;
   onClose: () => void;
   sessionId: string;
   time: string;
-  onConfirm: (participantId: string) => void;
+  onConfirm: (userId: string, partnerId: string) => void;
 }
 
 export default function ReservationModal({ isOpen, onClose, sessionId, time, onConfirm }: ReservationModalProps) {
   const user = useConnectedUser();
-  const userId = user?.userId;
+  const connectedUserId = user?.userId;
+  const { isPowerUser } = useUserRights();
+  const hasPowerUserRights = isPowerUser();
+  const userStore = useUserStore();
+  const connectedUserFullName = userStore.user ? `${userStore.user.firstName} ${userStore.user.lastName}` : '';
   const [favorites, setFavorites] = useState<string[]>([]);
   const [licensees, setLicensees] = useState<Licensee[]>([]);
-  const [selectedParticipant, setSelectedParticipant] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
+  const [useConnectedUserAsPlayer, setUseConnectedUserAsPlayer] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -53,15 +61,20 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
     };
 
     fetchData();
-  }, [isOpen, hasLoaded, userId]);
+  }, [isOpen, hasLoaded]);
 
   useEffect(() => {
     if (!isOpen) {
-      setSelectedParticipant('');
+      setSelectedUserId('');
+      setSelectedPartnerId('');
+      setUseConnectedUserAsPlayer(true);
       setError(null);
       setHasLoaded(false);
+    } else {
+      // Réinitialiser l'utilisateur connecté comme premier joueur quand le modal s'ouvre
+      setSelectedUserId(connectedUserId || '');
     }
-  }, [isOpen]);
+  }, [isOpen, connectedUserId]);
 
   const getFavoriteLicensees = () => licensees.filter(licensee => 
     favorites.includes(licensee.user[0]._id)
@@ -70,6 +83,9 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
   const handleReservation = async () => {
     try {
       setIsLoading(true);
+      // Si l'utilisateur n'a pas de droits POWER_USER, utiliser toujours l'utilisateur connecté
+      const userId = hasPowerUserRights && !useConnectedUserAsPlayer ? selectedUserId : connectedUserId;
+      
       const response = await fetch(`/api/reservations/${sessionId}`, {
         method: 'PUT',
         headers: {
@@ -77,7 +93,7 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
         },
         body: JSON.stringify({
           userId,
-          partnerId: selectedParticipant
+          partnerId: selectedPartnerId
         })
       });
 
@@ -89,8 +105,8 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
       }
 
       toast.success('Réservation effectuée avec succès');
-      onConfirm(selectedParticipant);
-    } catch (error) {  // On garde le paramètre error pour le logging
+      onConfirm(userId || '', selectedPartnerId);
+    } catch (error) {
       console.error('Erreur lors de la réservation:', error);
       toast.error('Une erreur est survenue lors de la réservation');
     } finally {
@@ -126,19 +142,64 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
           <p className="text-red-500">{error}</p>
         ) : (
           <div className="space-y-4">
+            {hasPowerUserRights && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">
+                  Premier joueur :
+                </label>
+                <div className="flex items-center space-x-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="useConnectedUser"
+                    checked={useConnectedUserAsPlayer}
+                    onChange={(e) => setUseConnectedUserAsPlayer(e.target.checked)}
+                    className="rounded dark:bg-gray-700"
+                  />
+                  <label htmlFor="useConnectedUser" className="text-sm">
+                    Utiliser mon compte ({connectedUserFullName})
+                  </label>
+                </div>
+                
+                {!useConnectedUserAsPlayer && (
+                  <select
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                    className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                  >
+                    <option value="">Choisir un joueur</option>
+                    {getFavoriteLicensees().map(licensee => (
+                      <option key={licensee.user[0]._id} value={licensee.user[0]._id}>
+                        {licensee.user[0].firstName} {licensee.user[0].lastName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
+            
             <div>
               <label className="block text-sm font-medium mb-2">
-                Sélectionnez un partenaire parmi vos favoris :
+                {hasPowerUserRights ? 'Deuxième joueur :' : 'Partenaire :'}
               </label>
               <select
-                value={selectedParticipant}
-                onChange={(e) => setSelectedParticipant(e.target.value)}
+                value={selectedPartnerId}
+                onChange={(e) => setSelectedPartnerId(e.target.value)}
                 className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
               >
                 <option value="">Choisir un partenaire</option>
                 {getFavoriteLicensees().map(licensee => (
-                  <option key={licensee.user[0]._id} value={licensee.user[0]._id}>
+                  <option 
+                    key={licensee.user[0]._id} 
+                    value={licensee.user[0]._id}
+                    disabled={
+                      (useConnectedUserAsPlayer && licensee.user[0]._id === connectedUserId) || 
+                      (!useConnectedUserAsPlayer && hasPowerUserRights && licensee.user[0]._id === selectedUserId)
+                    }
+                  >
                     {licensee.user[0].firstName} {licensee.user[0].lastName}
+                    {((useConnectedUserAsPlayer && licensee.user[0]._id === connectedUserId) || 
+                      (!useConnectedUserAsPlayer && hasPowerUserRights && licensee.user[0]._id === selectedUserId)) 
+                      ? ' (déjà sélectionné)' : ''}
                   </option>
                 ))}
               </select>
@@ -154,9 +215,9 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
               <button
                 type="button"
                 onClick={handleReservation}
-                disabled={!selectedParticipant}
+                disabled={!selectedPartnerId || (!useConnectedUserAsPlayer && hasPowerUserRights && !selectedUserId)}
                 className={`inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-                  selectedParticipant
+                  (selectedPartnerId && (useConnectedUserAsPlayer || !hasPowerUserRights || selectedUserId))
                     ? 'bg-blue-100 text-blue-900 hover:bg-blue-200 focus-visible:ring-blue-500'
                     : 'bg-gray-100 text-gray-500 cursor-not-allowed'
                 }`}

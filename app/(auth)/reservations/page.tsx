@@ -96,7 +96,7 @@ function ReservationsContent() {
     setIsModalOpen(true);
   };
 
-  const handleReservationConfirm = async (participant2Id: string) => {
+  const handleReservationConfirm = async (userId: string, partnerId: string) => {
     if (!selectedSlot) return;
 
     try {
@@ -104,8 +104,8 @@ function ReservationsContent() {
       console.log('Réservation confirmée:', {
         sessionId: selectedSlot.sessionId,
         time: selectedSlot.time,
-        participant1: userId,
-        participant2: participant2Id
+        userId,
+        partnerId
       });
       
       setIsModalOpen(false);
