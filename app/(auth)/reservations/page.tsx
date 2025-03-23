@@ -30,6 +30,8 @@ function ReservationsContent() {
 
   const previousDate = format(subDays(new Date(date), 1), 'yyyy-MM-dd');
   const nextDate = format(addDays(new Date(date), 1), 'yyyy-MM-dd');
+  const previousWeekDate = format(subDays(new Date(date), 7), 'yyyy-MM-dd');
+  const nextWeekDate = format(addDays(new Date(date), 7), 'yyyy-MM-dd');
 
   const isDatePassed = isBefore(startOfDay(new Date(date)), startOfDay(new Date()));
 
@@ -213,25 +215,49 @@ function ReservationsContent() {
         </Link>
 
         <div className="flex items-center justify-between mb-8">
-          <Link
-            href={`/reservations?date=${previousDate}`}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
+          <div className="flex items-center">
+            <Link
+              href={`/reservations?date=${previousWeekDate}`}
+              className="text-blue-600 hover:text-blue-800 mr-2"
+              title="Semaine précédente"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+            </Link>
+            <Link
+              href={`/reservations?date=${previousDate}`}
+              className="text-blue-600 hover:text-blue-800"
+              title="Jour précédent"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+          </div>
           <h1 className="text-3xl font-bold">
             {formattedDate}
           </h1>
-          <Link
-            href={`/reservations?date=${nextDate}`}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
+          <div className="flex items-center">
+            <Link
+              href={`/reservations?date=${nextDate}`}
+              className="text-blue-600 hover:text-blue-800"
+              title="Jour suivant"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+            <Link
+              href={`/reservations?date=${nextWeekDate}`}
+              className="text-blue-600 hover:text-blue-800 ml-2"
+              title="Semaine suivante"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
         </div>
 
         {loading ? (
