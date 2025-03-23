@@ -9,6 +9,7 @@ import { fr } from 'date-fns/locale';
 import ReservationModal from '@/app/components/ReservationModal';
 import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 import DeleteReservationModal from '@/app/components/DeleteReservationModal';
+import { useUserRights } from '@/app/hooks/useUserRights';
 
 interface ReservationByTimeSlot {
   time: string;
@@ -19,6 +20,8 @@ interface ReservationByTimeSlot {
 function ReservationsContent() {
   const user = useConnectedUser();
   const userId = user?.userId;
+  const { isPowerUser } = useUserRights();
+  const hasPowerUserRights = isPowerUser();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,10 +121,15 @@ function ReservationsContent() {
   };
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [slotToDelete, setSlotToDelete] = useState<{ sessionId: string; time: string; partnerId: string } | null>(null);
+  const [slotToDelete, setSlotToDelete] = useState<{ 
+    sessionId: string; 
+    time: string; 
+    partnerId: string;
+    mainUserId: string;
+  } | null>(null);
 
-  const handleDeleteClick = (sessionId: string, time: string, partnerId: string) => {
-    setSlotToDelete({ sessionId, time, partnerId });
+  const handleDeleteClick = (sessionId: string, time: string, partnerId: string, mainUserId: string) => {
+    setSlotToDelete({ sessionId, time, partnerId, mainUserId });
     setIsDeleteModalOpen(true);
   };
 
@@ -186,10 +194,25 @@ function ReservationsContent() {
                   <div className="w-3 h-3 left-3 -top-1 absolute transform rotate-45 bg-black"></div>
                 </div>
               </div>
-              {timeSlot.users[0]?.id === userId && (
+              {(timeSlot.users[0]?.id === userId || hasPowerUserRights) && (
                 <button
-                  onClick={() => handleDeleteClick(timeSlot.sessionId, timeSlot.time, timeSlot.users[1].id)}
+                  onClick={() => {
+                    // Déterminer le mainUserId (toujours le premier utilisateur)
+                    const mainUserId = timeSlot.users[0]?.id || '';
+                    
+                    // Déterminer le partnerId (toujours le deuxième utilisateur)
+                    const partnerId = timeSlot.users[1]?.id || '';
+                    
+                    handleDeleteClick(
+                      timeSlot.sessionId,
+                      timeSlot.time,
+                      partnerId,
+                      mainUserId
+                    );
+                  }}
                   className="ml-2 text-red-500 hover:text-red-700"
+                  title={hasPowerUserRights && timeSlot.users[0]?.id !== userId ? 
+                    "Supprimer (droit administrateur)" : "Supprimer"}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -325,6 +348,7 @@ function ReservationsContent() {
             }}
             sessionId={slotToDelete.sessionId}
             partnerId={slotToDelete.partnerId}
+            mainUserId={slotToDelete.mainUserId}
             onSuccess={fetchReservations}
             time={slotToDelete.time}
           />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useConnectedUser } from '@/app/hooks/useConnectedUser';
+import { useUserRights } from '@/app/hooks/useUserRights';
 
 interface DeleteReservationModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface DeleteReservationModalProps {
   partnerId: string;
   onSuccess: () => void;
   time: string;
+  mainUserId?: string; // ID du user principal de la réservation
 }
 
 export default function DeleteReservationModal({
@@ -18,23 +20,38 @@ export default function DeleteReservationModal({
   partnerId,
   onSuccess,
   time,
+  mainUserId,
 }: DeleteReservationModalProps) {
   const user = useConnectedUser();
-  const userId = user?.userId;
+  const connectedUserId = user?.userId;
+  const { isPowerUser } = useUserRights();
+  const hasPowerUserRights = isPowerUser();
 
   const handleDelete = async () => {
     try {
-      if (!userId) {
+      if (!connectedUserId) {
         console.error('User not connected');
         return;
       }
+
+      // Utiliser le mainUserId si fourni et que l'utilisateur a des droits de powerUser
+      // Sinon, utiliser l'userId de l'utilisateur connecté
+      const userIdToUse = hasPowerUserRights && mainUserId ? mainUserId : connectedUserId;
+      
+      console.log('Suppression avec:', {
+        userId: userIdToUse,
+        partnerId: partnerId
+      });
 
       const response = await fetch(`/api/reservations/${sessionId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId, partnerId }),
+        body: JSON.stringify({ 
+          userId: userIdToUse, 
+          partnerId: partnerId 
+        }),
       });
 
       if (!response.ok) {
@@ -56,6 +73,11 @@ export default function DeleteReservationModal({
         <h3 className="text-lg font-medium mb-4">
           Confirmer la suppression de la réservation de {time} ?
         </h3>
+        {hasPowerUserRights && mainUserId && mainUserId !== connectedUserId && (
+          <p className="text-amber-600 dark:text-amber-400 mb-4 text-sm">
+            Vous supprimez cette réservation en utilisant vos droits d&apos;utilisateur avancé.
+          </p>
+        )}
         <div className="flex justify-end gap-4">
           <button
             onClick={onClose}
