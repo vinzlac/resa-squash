@@ -20,6 +20,9 @@ import { Licensee } from '@/app/types/licensee';
 // Variable statique pour stocker la map des licenciés par email
 export let licenseesMapByEmail: Map<string, Licensee> = new Map();
 
+// Variable statique pour stocker la map des licenciés par userId
+export let licenseesMapByUserId: Map<string, Licensee> = new Map();
+
 // Variable pour stocker le token
 let globalTeamrToken: string | undefined;
 
@@ -39,10 +42,15 @@ const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
 // const LICENCIES_FILE = "./allLicencies.json"; // si le fichier est dans le même dossier
 
 // Fonction pour charger ou récupérer les licenciés
-export async function getLicenciesMapByUserId(token: string): Promise<
-  Map<string, Licensee>
-> {
-  console.log("getLicencies");
+export async function getLicenciesMapByUserId(token: string): Promise<Map<string, Licensee>> {
+  console.log("getLicenciesMapByUserId");
+  
+  // Si la map statique est déjà remplie, on la retourne directement
+  if (licenseesMapByUserId.size > 0) {
+    console.log("📂 Utilisation de la map en mémoire...");
+    return licenseesMapByUserId;
+  }
+  
   try {
     console.log("📂 Chargement des licenciés depuis le fichier local...");
     const data = await fs.readFile(LICENCIES_FILE, "utf-8");
@@ -63,11 +71,19 @@ export async function getLicenciesMapByUserId(token: string): Promise<
       }
     });
 
+    // Mettre à jour la map statique
+    licenseesMapByUserId = licenseeMap;
+
+    console.log("final licenseesMapByUserId size : ", licenseesMapByUserId.size);
     return licenseeMap;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       console.log("🔄 Fichier non trouvé. Récupération depuis l'API...");
-      return await fetchAllLicensees(token);
+      const licenseeMap = await fetchAllLicenseesByUserId(token);
+      // Mettre à jour la map statique
+      licenseesMapByUserId = licenseeMap;
+      console.log("final licenseesMapByUserId size : ", licenseesMapByUserId.size);
+      return licenseeMap;
     } else {
       throw error;
     }
@@ -126,7 +142,7 @@ export async function getLicenciesMapByEmail(token: string): Promise<
 }
 
 // Fonction pour récupérer tous les licenciés depuis l'API et les enregistrer en cache
-async function fetchAllLicensees(token: string): Promise<
+async function fetchAllLicenseesByUserId(token: string): Promise<
   Map<string, Licensee>
 > {
   const firstClubId = Object.values(COURT_CLUB_IDS)[0];
@@ -448,10 +464,14 @@ export async function authenticateUser(email: string, password: string): Promise
   // Stocker le token global
   setGlobalTeamrToken(authResponse.token);
   
-  // Initialiser la map des licenciés par email après l'authentification
-  console.log("🔄 Initialisation de la map des licenciés par email...");
-  await getLicenciesMapByEmail(authResponse.token);
+  // Initialiser les maps des licenciés après l'authentification
+  console.log("🔄 Initialisation des maps des licenciés...");
+  await Promise.all([
+    getLicenciesMapByEmail(authResponse.token),
+    getLicenciesMapByUserId(authResponse.token)
+  ]);
   console.log(`✅ Map des licenciés par email initialisée avec ${licenseesMapByEmail.size} entrées`);
+  console.log(`✅ Map des licenciés par userId initialisée avec ${licenseesMapByUserId.size} entrées`);
   
   return authResponse;
 }
