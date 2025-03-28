@@ -1,11 +1,13 @@
 import { bookSession, deleteBookSession } from '@/app/services/common';
 import { NextRequest, NextResponse } from 'next/server';
-import { extractTeamrToken } from '@/app/utils/auth';
+import { extractTeamrToken, extractConnectedUserId } from '@/app/utils/auth';
 import { ErrorCode, ApiError } from '@/app/types/errors';
+import { createReservationIntoDB, removeReservationIntoDB } from '@/app/lib/db';
 
 interface BookingRequest {
   userId: string;
   partnerId: string;
+  startDate: string; // Format ISO string
 }
 
 export async function PUT(request: NextRequest) {
@@ -36,20 +38,35 @@ export async function PUT(request: NextRequest) {
 
     // Extraction du body JSON
     const body = await request.json() as BookingRequest;
-    const { userId, partnerId } = body;
+    const { userId, partnerId, startDate } = body;
 
     // Validation des données
-    if (!userId || !partnerId) {
+    if (!userId || !partnerId || !startDate) {
       return NextResponse.json({
         error: {
           code: ErrorCode.INVALID_REQUEST,
-          message: 'userId et partnerId sont requis'
+          message: 'userId, partnerId et startDate sont requis'
         }
       }, { status: 400 });
     }
 
     // Appel à la fonction bookSession
     const result = await bookSession(sessionId, userId, partnerId, token);
+    
+    // Récupérer l'ID de l'utilisateur connecté depuis le token
+    const connectedUserId = extractConnectedUserId(request);
+    
+    // Logger l'action de création de réservation avec l'utilisateur connecté
+    if (connectedUserId) {
+      await createReservationIntoDB(
+        connectedUserId,
+        sessionId,
+        userId,
+        partnerId,
+        new Date(startDate)
+      );
+    }
+    
     return NextResponse.json(result);
 
   } catch (error) {
@@ -87,17 +104,25 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'sessionId est requis' }, { status: 400 });
     }
 
-    const body = await request.json();
-    const { userId, partnerId } = body;
+    const body = await request.json() as BookingRequest;
+    const { userId, partnerId, startDate } = body;
 
-    if (!userId || !partnerId) {
+    if (!userId || !partnerId || !startDate) {
       return NextResponse.json(
-        { error: 'userId et partnerId sont requis' },
+        { error: 'userId, partnerId et startDate sont requis' },
         { status: 400 }
       );
     }
 
     await deleteBookSession(sessionId, userId, partnerId, token);
+    
+    // Récupérer l'ID de l'utilisateur connecté depuis le token
+    const connectedUserId = extractConnectedUserId(request);
+    
+    // Logger l'action de suppression de réservation avec l'utilisateur connecté
+    if (connectedUserId) {
+      await removeReservationIntoDB(sessionId);
+    }
 
     return NextResponse.json({
       sessionId,
@@ -130,16 +155,30 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json() as BookingRequest;
-    const { userId, partnerId } = body;
+    const { userId, partnerId, startDate } = body;
 
-    if (!userId || !partnerId) {
+    if (!userId || !partnerId || !startDate) {
       return NextResponse.json(
-        { error: 'userId et partnerId sont requis' },
+        { error: 'userId, partnerId et startDate sont requis' },
         { status: 400 }
       );
     }
 
     await bookSession(sessionId, userId, partnerId, token);
+    
+    // Récupérer l'ID de l'utilisateur connecté depuis le token
+    const connectedUserId = extractConnectedUserId(request);
+    
+    // Logger l'action de création de réservation avec l'utilisateur connecté
+    if (connectedUserId) {
+      await createReservationIntoDB(
+        connectedUserId,
+        sessionId,
+        userId,
+        partnerId,
+        new Date(startDate)
+      );
+    }
 
     return NextResponse.json({
       sessionId,

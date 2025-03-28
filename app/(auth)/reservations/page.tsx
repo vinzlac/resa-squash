@@ -99,27 +99,6 @@ function ReservationsContent() {
     setIsModalOpen(true);
   };
 
-  const handleReservationConfirm = async (userId: string, partnerId: string) => {
-    if (!selectedSlot) return;
-
-    try {
-      // Ici, ajoutez la logique pour créer la réservation
-      console.log('Réservation confirmée:', {
-        sessionId: selectedSlot.sessionId,
-        time: selectedSlot.time,
-        userId,
-        partnerId
-      });
-      
-      setIsModalOpen(false);
-      setSelectedSlot(null);
-      // Rafraîchir les réservations après confirmation
-      fetchReservations();
-    } catch (error) {
-      console.error('Erreur lors de la réservation:', error);
-    }
-  };
-
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [slotToDelete, setSlotToDelete] = useState<{ 
     sessionId: string; 
@@ -335,7 +314,11 @@ function ReservationsContent() {
             }}
             sessionId={selectedSlot.sessionId}
             time={selectedSlot.time}
-            onConfirm={handleReservationConfirm}
+            date={date}
+            timeSlot={reservationsByCourtNumber[parseInt(selectedSlot.sessionId.split('-')[0])]?.find(
+              slot => slot.time === selectedSlot.time
+            ) || { users: [] }}
+            onSuccess={fetchReservations}
           />
         )}
 
@@ -351,6 +334,8 @@ function ReservationsContent() {
             mainUserId={slotToDelete.mainUserId}
             onSuccess={fetchReservations}
             time={slotToDelete.time}
+            date={date}
+            startDate={new Date(date + 'T' + slotToDelete.time.replace('H', ':') + ':00')}
           />
         )}
       </div>

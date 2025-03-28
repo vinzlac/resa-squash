@@ -6,16 +6,27 @@ import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 import { toast } from 'react-hot-toast';
 import { useUserRights } from '@/app/hooks/useUserRights';
 import { useUserStore } from '@/app/stores/userStore';
+import DeleteReservationModal from '@/app/components/DeleteReservationModal';
 
 interface ReservationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess: () => void;
   sessionId: string;
+  date: string;
   time: string;
-  onConfirm: (userId: string, partnerId: string) => void;
+  timeSlot: { users: { id: string }[] };
 }
 
-export default function ReservationModal({ isOpen, onClose, sessionId, time, onConfirm }: ReservationModalProps) {
+export default function ReservationModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  sessionId,
+  date,
+  time,
+  timeSlot,
+}: ReservationModalProps) {
   const user = useConnectedUser();
   const connectedUserId = user?.userId;
   const { isPowerUser } = useUserRights();
@@ -30,10 +41,35 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [startDate] = useState<Date>(() => {
+    try {
+      console.log('Date reçue:', date);
+      console.log('Heure reçue:', time);
+      
+      // S'assurer que la date est au format YYYY-MM-DD
+      const formattedDate = date.split('T')[0];
+      // Convertir le format de l'heure de "HH'H'MM" en "HH:MM"
+      const formattedTime = time.replace('H', ':');
+      
+      const dateObj = new Date(formattedDate + 'T' + formattedTime + ':00');
+      console.log('Date après parsing:', dateObj);
+      
+      if (isNaN(dateObj.getTime())) {
+        throw new Error('Date invalide');
+      }
+      
+      console.log('Date finale:', dateObj);
+      
+      return dateObj;
+    } catch (error) {
+      console.error('Erreur lors de la création de la date:', error);
+      return new Date(); // Fallback à la date actuelle en cas d'erreur
+    }
+  });
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-
       if (!isOpen || hasLoaded) return;
 
       try {
@@ -71,7 +107,6 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
       setError(null);
       setHasLoaded(false);
     } else {
-      // Réinitialiser l'utilisateur connecté comme premier joueur quand le modal s'ouvre
       setSelectedUserId(connectedUserId || '');
     }
   }, [isOpen, connectedUserId]);
@@ -83,9 +118,15 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
   const handleReservation = async () => {
     try {
       setIsLoading(true);
-      // Si l'utilisateur n'a pas de droits POWER_USER, utiliser toujours l'utilisateur connecté
       const userId = hasPowerUserRights && !useConnectedUserAsPlayer ? selectedUserId : connectedUserId;
       
+      console.log('Date avant envoi:', startDate);
+      console.log('Date ISO:', startDate.toISOString());
+      
+      if (isNaN(startDate.getTime())) {
+        throw new Error('Date de réservation invalide');
+      }
+
       const response = await fetch(`/api/reservations/${sessionId}`, {
         method: 'PUT',
         headers: {
@@ -93,7 +134,8 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
         },
         body: JSON.stringify({
           userId,
-          partnerId: selectedPartnerId
+          partnerId: selectedPartnerId,
+          startDate: startDate.toISOString()
         })
       });
 
@@ -105,7 +147,8 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
       }
 
       toast.success('Réservation effectuée avec succès');
-      onConfirm(userId || '', selectedPartnerId);
+      onSuccess();
+      onClose();
     } catch (error) {
       console.error('Erreur lors de la réservation:', error);
       toast.error('Une erreur est survenue lors de la réservation');
@@ -226,6 +269,20 @@ export default function ReservationModal({ isOpen, onClose, sessionId, time, onC
               </button>
             </div>
           </div>
+        )}
+
+        {timeSlot && timeSlot.users && timeSlot.users.length > 0 && (
+          <DeleteReservationModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onSuccess={onSuccess}
+            sessionId={sessionId}
+            date={date}
+            time={time}
+            mainUserId={timeSlot.users[0].id}
+            partnerId={timeSlot.users[1].id}
+            startDate={startDate}
+          />
         )}
       </div>
     </div>

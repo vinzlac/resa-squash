@@ -7,6 +7,17 @@ export function extractTeamrToken(request: NextRequest): string | undefined {
   return request.cookies.get(COOKIE_NAMES.TEAMR_TOKEN)?.value;
 }
 
+export function extractConnectedUserId(request: NextRequest): string | null {
+  try {
+    // Récupérer l'ID d'utilisateur depuis les cookies
+    const userId = request.cookies.get('teamr_userId')?.value;
+    return userId || null;
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'ID utilisateur connecté:', error);
+    return null;
+  }
+}
+
 export function buildTeamRHeader(token?: string): HeadersInit {
   return {
     'Host': 'app.teamr.eu',

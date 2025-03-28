@@ -80,3 +80,35 @@ export async function removeFavorite(userId: string, licenseeId: string) {
     throw error;
   }
 }
+
+// Fonction pour enregistrer une création de réservation
+export async function createReservationIntoDB(
+  userId: string,
+  sessionId: string,
+  mainUserId: string,
+  partnerId: string,
+  startDate: Date
+) {
+  try {
+    await executeQuery(
+      "INSERT INTO reservations (user_id, session_id, main_user_id, partner_id, start_date) VALUES ($1, $2, $3, $4, $5)",
+      [userId, sessionId, mainUserId, partnerId, startDate.toISOString()]
+    );
+  } catch (error) {
+    console.error(`Error logging reservation creation:`, error);
+    // Ne pas propager l'erreur pour ne pas bloquer le flux principal
+  }
+}
+
+// Fonction pour enregistrer une suppression de réservation
+export async function removeReservationIntoDB(sessionId: string) {
+  try {
+    await executeQuery(
+      "DELETE FROM reservations WHERE session_id = $1",
+      [sessionId]
+    );
+  } catch (error) {
+    console.error(`Error logging reservation deletion:`, error);
+    // Ne pas propager l'erreur pour ne pas bloquer le flux principal
+  }
+}
