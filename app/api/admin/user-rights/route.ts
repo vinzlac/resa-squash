@@ -11,11 +11,12 @@ const USE_MOCK_DATA = false;
 export async function GET(request: NextRequest) {
   try {
     // Récupérer le token depuis les cookies
-    const token = request.cookies.get('teamr_token')?.value;
+    const teamr_token = request.cookies.get('teamr_token')?.value;
+    console.log("teamr_token : ", teamr_token);
     
     // Stocker le token global si disponible
-    if (token) {
-      setGlobalTeamrToken(token);
+    if (teamr_token) {
+      setGlobalTeamrToken(teamr_token);
     }
     
     // Initialiser la map si nécessaire

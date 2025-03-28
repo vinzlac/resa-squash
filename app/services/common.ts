@@ -351,7 +351,7 @@ export async function bookSession(
     // Vérifier si la réponse contient "already booked"
     if (responseText.includes("already booked")) {
       throw {
-        code: ErrorCode.SLOT_ALREADY_BOOKED,
+        code: ErrorCode.INVALID_PARAMETER,
         message: responseText
       } as ApiError;
     }
@@ -478,12 +478,15 @@ export async function authenticateUser(email: string, password: string): Promise
 
 // Fonction pour s'assurer que la map est initialisée
 export async function ensureLicenseesMapByEmailIsInitialized(tokenParam?: string): Promise<void> {
+  console.log("tokenParam : ", tokenParam);
   console.log("Vérification de l'initialisation de licenseesMapByEmail...");
   console.log("Taille actuelle: ", licenseesMapByEmail.size);
   
   if (licenseesMapByEmail.size === 0) {
     // Utiliser le token passé en paramètre ou le token global
     const token = tokenParam || globalTeamrToken;
+
+    console.log("token : ", token);
     
     if (token) {
       console.log("Initialisation de licenseesMapByEmail...");
@@ -491,6 +494,25 @@ export async function ensureLicenseesMapByEmailIsInitialized(tokenParam?: string
       console.log("licenseesMapByEmail initialisée avec", licenseesMapByEmail.size, "entrées");
     } else {
       console.warn("Aucun token disponible pour initialiser licenseesMapByEmail");
+    }
+  }
+}
+
+// Fonction pour s'assurer que la map des licenciés par userId est initialisée
+export async function ensureLicenseesMapByUserIdIsInitialized(tokenParam?: string): Promise<void> {
+  console.log("Vérification de l'initialisation de licenseesMapByUserId...");
+  console.log("Taille actuelle: ", licenseesMapByUserId.size);
+  
+  if (licenseesMapByUserId.size === 0) {
+    // Utiliser le token passé en paramètre ou le token global
+    const token = tokenParam || globalTeamrToken;
+    
+    if (token) {
+      console.log("Initialisation de licenseesMapByUserId...");
+      await getLicenciesMapByUserId(token);
+      console.log("licenseesMapByUserId initialisée avec", licenseesMapByUserId.size, "entrées");
+    } else {
+      console.warn("Aucun token disponible pour initialiser licenseesMapByUserId");
     }
   }
 }
