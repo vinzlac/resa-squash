@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "debug": "NODE_OPTIONS='--inspect' next dev",
-    "prod": "NODE_ENV=production npm run build && NODE_ENV=production npm run start",
+    "dev": "ts-node -r tsconfig-paths/register --project tsconfig.server.json server.ts",
+    "debug": "NODE_OPTIONS='--inspect' ts-node -r tsconfig-paths/register --project tsconfig.server.json server.ts",
+    "prod": "NODE_ENV=production npm run build && NODE_ENV=production ts-node -r tsconfig-paths/register --project tsconfig.server.json server.ts",
     "build-prod": "NODE_ENV=production npm run build",
     "build": "NEXT_PUBLIC_BUILD_TIME=$(date -u +\"%Y-%m-%dT%H:%M:%SZ\") next build",
-    "start": "next start",
+    "start": "ts-node -r tsconfig-paths/register --project tsconfig.server.json server.ts",
     "lint": "next lint",
     "init-db": "node scripts/init-db.mjs",
     "postbuild": "node scripts/migrate.mjs",
@@ -40,6 +40,8 @@
     "eslint-config-next": "15.1.6",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5"
   }
 }
