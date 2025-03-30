@@ -1,129 +1,118 @@
 # Resa Squash
 
-Application de gestion des réservations de terrains de squash construite avec [Next.js](https://nextjs.org).
+Application de réservation de courts de squash.
 
-## Configuration de la base de données
+## Prérequis
 
-### Avec Docker (recommandé)
+- Node.js 18+
+- PostgreSQL
+- Compte TeamR
 
-1. **Lancer PostgreSQL avec Docker**
+## Installation
+
+1. Cloner le repository
 ```bash
-docker run --name postgres-squash-local \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_USER=default \
-  -e POSTGRES_DB=verceldb \
-  -p 5432:5432 \
-  -d postgres
+git clone https://github.com/yourusername/resa-squash.git
+cd resa-squash
 ```
 
-2. **Commandes Docker utiles**
+2. Installer les dépendances
 ```bash
-# Vérifier que le conteneur est en cours d'exécution
-docker ps
-
-# Voir les logs du conteneur
-docker logs postgres-squash-local
-
-# Arrêter le conteneur
-docker stop postgres-squash-local
-
-# Redémarrer le conteneur
-docker start postgres-squash-local
-
-# Supprimer le conteneur (attention : cela effacera toutes les données)
-docker rm -f postgres-squash-local
-
-# Se connecter au shell PostgreSQL dans le conteneur
-docker exec -it postgres-squash-local psql -U default -d verceldb
+npm install
 ```
 
-## Installation du projet
-
-1. **Installer les dépendances**
+3. Configurer les variables d'environnement
 ```bash
-docker ps
+cp .env.example .env.local
 ```
+Remplir les variables dans `.env.local` avec vos informations.
 
-2. **Configurer les variables d'environnement**
-
-Créez un fichier `.env.local` à la racine du projet :
-```env
-POSTGRES_URL="postgres://default:password@localhost:5432/verceldb"
-POSTGRES_PRISMA_URL="postgres://default:password@localhost:5432/verceldb?pgbouncer=true&connect_timeout=15"
-POSTGRES_URL_NON_POOLING="postgres://default:password@localhost:5432/verceldb"
-POSTGRES_USER="default"
-POSTGRES_HOST="localhost"
-POSTGRES_PASSWORD="password"
-POSTGRES_DATABASE="verceldb"
-```
-
-3. **Initialiser la base de données**
+4. Initialiser la base de données
 ```bash
 npm run init-db
 ```
 
 ## Développement
 
+Pour lancer le serveur de développement avec le serveur personnalisé (inclut l'initialisation des maps des licenciés) :
 ```bash
-# Lancer le serveur de développement
 npm run dev
+```
 
-# Construire l'application
-npm run build
-
-# Lancer les tests de linting
-npm run lint
-
-# Lancer en mode production
-npm run start
-
-# Lancer en mode debug
+Pour lancer avec le débogueur Node.js :
+```bash
 npm run debug
 ```
 
-Ouvrez [http://localhost:3000](http://localhost:3000) avec votre navigateur pour voir le résultat.
+## Production
+
+Pour construire et lancer l'application en production localement :
+```bash
+npm run build
+npm run start:custom
+```
+
+## Déploiement sur Vercel
+
+L'application est configurée pour être déployée sur Vercel. Sur Vercel :
+- La commande `build` construit l'application
+- La commande `start` lance le serveur Next.js standard
+- Le serveur personnalisé (`server.ts`) n'est pas utilisé
+
+Pour plus de détails sur le déploiement, consultez la [documentation de déploiement Next.js](https://nextjs.org/docs/deployment).
+
+## Scripts disponibles
+
+- `npm run dev` : Lance le serveur de développement avec le serveur personnalisé
+- `npm run debug` : Lance le serveur avec le débogueur Node.js
+- `npm run build` : Construit l'application pour la production
+- `npm run start` : Lance le serveur Next.js standard (utilisé par Vercel)
+- `npm run start:custom` : Lance le serveur personnalisé en production
+- `npm run lint` : Vérifie le code avec ESLint
+- `npm run init-db` : Initialise la base de données
+- `npm run migrate` : Exécute les migrations de la base de données
 
 ## Structure du projet
 
-- `/app` - Code source de l'application
-  - `/api` - Routes API
-    - `/favorites` - Gestion des favoris
-    - `/licensees` - Gestion des licenciés
-    - `/reservations` - Gestion des réservations
-  - `/types` - Types TypeScript
-  - `/lib` - Utilitaires et configuration
-- `/scripts` - Scripts utilitaires
-
-## Base de données
-
-La base de données stocke :
-- Les favoris des utilisateurs
-- Les associations entre utilisateurs et licenciés
-
-### Tables
-
-**favorites**
-```sql
-CREATE TABLE favorites (
-  id SERIAL PRIMARY KEY,
-  user_id VARCHAR(255) NOT NULL,
-  licensee_id VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, licensee_id)
-);
+```
+resa-squash/
+├── app/
+│   ├── api/           # Routes API
+│   ├── components/    # Composants React
+│   ├── lib/          # Utilitaires et configurations
+│   ├── services/     # Services et logique métier
+│   └── types/        # Types TypeScript
+├── public/           # Fichiers statiques
+├── scripts/          # Scripts utilitaires
+└── server.ts         # Serveur personnalisé (utilisé uniquement en développement local)
 ```
 
-## Déploiement
+## Fonctionnalités
 
-L'application est configurée pour être déployée sur [Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme). La base de données PostgreSQL sera automatiquement provisionnée par Vercel lors du déploiement.
+- Authentification avec TeamR
+- Réservation de courts de squash
+- Gestion des favoris
+- Interface utilisateur responsive
+- Gestion des erreurs et notifications
 
-Pour plus d'informations sur le déploiement, consultez la [documentation de déploiement Next.js](https://nextjs.org/docs/app/building-your-application/deploying).
+## Technologies utilisées
 
-## En savoir plus
+- Next.js 15
+- React 19
+- TypeScript
+- PostgreSQL
+- TailwindCSS
+- NextAuth.js
+- Zustand (gestion d'état)
 
-Pour en savoir plus sur Next.js :
+## Contribution
 
-- [Documentation Next.js](https://nextjs.org/docs) - découvrez les fonctionnalités de Next.js
-- [Learn Next.js](https://nextjs.org/learn) - un tutoriel interactif Next.js
+1. Fork le projet
+2. Créer une branche pour votre fonctionnalité
+3. Commiter vos changements
+4. Pousser vers la branche
+5. Ouvrir une Pull Request
 
-Ce projet utilise [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) pour optimiser et charger automatiquement [Geist](https://vercel.com/font), une nouvelle famille de polices pour Vercel.
+## Licence
+
+MIT

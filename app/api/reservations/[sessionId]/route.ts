@@ -4,7 +4,7 @@ import { extractTeamrToken, extractConnectedUserId } from '@/app/utils/auth';
 import { ErrorCode, ApiError } from '@/app/types/errors';
 import { createReservationIntoDB, removeReservationIntoDB } from '@/app/lib/db';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/app/api/auth/auth.config';
 
 interface BookingRequest {
   userId: string;
