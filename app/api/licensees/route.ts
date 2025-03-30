@@ -6,11 +6,19 @@ export async function GET() {
     console.log('API licenciés appelée');
     
     // Récupérer les licenciés de la base de données
-    const licensees = await executeQuery(`
+    const dbLicensees = await executeQuery(`
       SELECT userId, email, firstName, lastName
       FROM licensees
       ORDER BY lastName, firstName
     `);
+    
+    // Normaliser les noms de champs pour correspondre au format attendu par le client
+    const licensees = dbLicensees.map(licensee => ({
+      userId: licensee.userid || licensee.userId,
+      email: licensee.email,
+      firstName: licensee.firstname || licensee.firstName,
+      lastName: licensee.lastname || licensee.lastName
+    }));
     
     console.log(`${licensees.length} licenciés récupérés`);
     

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserRights } from '@/app/hooks/useUserRights';
 import { toast } from 'react-hot-toast';
@@ -28,6 +28,15 @@ export default function LicenseesPage() {
   const [isClient, setIsClient] = useState(false);
   const [rejectedLicensees, setRejectedLicensees] = useState<Licensee[]>([]);
   const dataFetchedRef = useRef(false);
+
+  // Filtres
+  const [nameFilter, setNameFilter] = useState('');
+  const [firstNameFilter, setFirstNameFilter] = useState('');
+  const [emailFilter, setEmailFilter] = useState('');
+
+  // Tri
+  const [sortField, setSortField] = useState<'lastName' | 'firstName' | 'email' | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Marquer que nous sommes côté client
   useEffect(() => {
@@ -128,6 +137,82 @@ export default function LicenseesPage() {
     }
   };
 
+  // Fonction pour changer le tri
+  const handleSort = (field: 'lastName' | 'firstName' | 'email') => {
+    if (sortField === field) {
+      // Si même colonne, inverser la direction
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Si nouvelle colonne, définir sur ascendant
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Filtrer et trier les licenciés selon les critères
+  const filteredAndSortedLicensees = useMemo(() => {
+    // D'abord filtrer
+    const filtered = licensees.filter(licensee => {
+      const nameMatches = licensee.lastName.toLowerCase().includes(nameFilter.toLowerCase());
+      const firstNameMatches = licensee.firstName.toLowerCase().includes(firstNameFilter.toLowerCase());
+      const emailMatches = licensee.email.toLowerCase().includes(emailFilter.toLowerCase());
+      
+      return nameMatches && firstNameMatches && emailMatches;
+    });
+
+    // Ensuite trier si un champ de tri est sélectionné
+    if (sortField) {
+      return [...filtered].sort((a, b) => {
+        // Comparaison insensible à la casse
+        const valueA = a[sortField].toLowerCase();
+        const valueB = b[sortField].toLowerCase();
+        
+        if (valueA < valueB) {
+          return sortDirection === 'asc' ? -1 : 1;
+        }
+        if (valueA > valueB) {
+          return sortDirection === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    
+    return filtered;
+  }, [licensees, nameFilter, firstNameFilter, emailFilter, sortField, sortDirection]);
+  
+  const resetFilters = () => {
+    setNameFilter('');
+    setFirstNameFilter('');
+    setEmailFilter('');
+  };
+
+  // Composant pour afficher les flèches de tri
+  const SortArrow = ({ field }: { field: 'lastName' | 'firstName' | 'email' }) => {
+    if (sortField !== field) {
+      return (
+        <span className="ml-1 text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          </svg>
+        </span>
+      );
+    }
+    
+    return sortDirection === 'asc' ? (
+      <span className="ml-1 text-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+        </svg>
+      </span>
+    ) : (
+      <span className="ml-1 text-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </span>
+    );
+  };
+
   if (!isClient || loading) {
     return <div className="p-4">Chargement...</div>;
   }
@@ -192,23 +277,89 @@ export default function LicenseesPage() {
         </div>
       )}
       
+      {/* Filtres */}
+      <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded">
+        <div className="text-lg font-medium mb-2">Filtres</div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label htmlFor="nameFilter" className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+            <input
+              id="nameFilter"
+              type="text"
+              value={nameFilter}
+              onChange={(e) => setNameFilter(e.target.value)}
+              placeholder="Filtrer par nom..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="firstNameFilter" className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+            <input
+              id="firstNameFilter"
+              type="text"
+              value={firstNameFilter}
+              onChange={(e) => setFirstNameFilter(e.target.value)}
+              placeholder="Filtrer par prénom..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="emailFilter" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              id="emailFilter"
+              type="text"
+              value={emailFilter}
+              onChange={(e) => setEmailFilter(e.target.value)}
+              placeholder="Filtrer par email..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div className="self-end">
+            <button
+              onClick={resetFilters}
+              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            >
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+        <div className="mt-2 text-sm text-gray-600">
+          {filteredAndSortedLicensees.length} licenciés affichés sur {licensees.length} au total
+        </div>
+      </div>
+      
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-300">
           <thead>
             <tr className="bg-gray-100">
-              <th className="px-4 py-2 border">Nom</th>
-              <th className="px-4 py-2 border">Prénom</th>
-              <th className="px-4 py-2 border">Email</th>
+              <th 
+                className="px-4 py-2 border cursor-pointer" 
+                onClick={() => handleSort('lastName')}
+              >
+                Nom <SortArrow field="lastName" />
+              </th>
+              <th 
+                className="px-4 py-2 border cursor-pointer" 
+                onClick={() => handleSort('firstName')}
+              >
+                Prénom <SortArrow field="firstName" />
+              </th>
+              <th 
+                className="px-4 py-2 border cursor-pointer" 
+                onClick={() => handleSort('email')}
+              >
+                Email <SortArrow field="email" />
+              </th>
               <th className="px-4 py-2 border">ID</th>
             </tr>
           </thead>
           <tbody>
-            {licensees.length === 0 ? (
+            {filteredAndSortedLicensees.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-2 text-center">Aucun licencié trouvé</td>
               </tr>
             ) : (
-              licensees.map((licensee) => (
+              filteredAndSortedLicensees.map((licensee) => (
                 <tr key={licensee.userId} className="hover:bg-gray-50">
                   <td className="px-4 py-2 border">{licensee.lastName}</td>
                   <td className="px-4 py-2 border">{licensee.firstName}</td>
