@@ -273,7 +273,7 @@ async function fetchAllLicenseesByUserId(token: string): Promise<
 }
 
 // Fonction pour récupérer tous les licenciés depuis l'API avec l'email comme clé
-async function fetchAllLicenseesByEmail(token: string): Promise<
+export async function fetchAllLicenseesByEmail(token: string): Promise<
   Map<string, Licensee>
 > {
   console.log("fetchAllLicenseesByEmail calling url : ", GET_LICENSEE_URL);

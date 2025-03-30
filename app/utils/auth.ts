@@ -10,7 +10,7 @@ export function extractTeamrToken(request: NextRequest): string | undefined {
 export function extractConnectedUserId(request: NextRequest): string | null {
   try {
     // Récupérer l'ID d'utilisateur depuis les cookies
-    const userId = request.cookies.get('teamr_userId')?.value;
+    const userId = request.cookies.get(COOKIE_NAMES.TEAMR_USER_ID)?.value;
     return userId || null;
   } catch (error) {
     console.error('Erreur lors de la récupération de l\'ID utilisateur connecté:', error);
