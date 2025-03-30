@@ -70,7 +70,7 @@ export default function LicenseesPage() {
     try {
       setLoading(true);
       console.log('Récupération des licenciés...');
-      const response = await fetch('/api/licensees');
+      const response = await fetch('/api/admin/licensees');
       
       if (!response.ok) {
         const data = await response.json();
@@ -93,7 +93,7 @@ export default function LicenseesPage() {
       setImporting(true);
       setRejectedLicensees([]);
       
-      const response = await fetch('/api/licensees/import', {
+      const response = await fetch('/api/admin/licensees/import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,7 +148,7 @@ export default function LicenseesPage() {
     try {
       setDeleting(true);
       
-      const response = await fetch('/api/licensees', {
+      const response = await fetch('/api/admin/licensees', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
