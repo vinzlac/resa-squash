@@ -14,6 +14,7 @@ interface Licensee {
 
 interface ImportResult {
   imported: number;
+  updated: number;
   skipped: number;
   rejected: Licensee[];
 }
@@ -119,12 +120,12 @@ export default function LicenseesPage() {
       console.log('Résultat de l\'import:', result);
       
       // Afficher un message de succès/info
-      toast.success(`Import terminé : ${result.imported} licenciés importés, ${result.skipped} ignorés.`);
+      toast.success(`Import terminé : ${result.imported} licenciés importés, ${result.updated} mis à jour, ${result.skipped} ignorés.`);
       
       // Mettre à jour la liste des licenciés rejetés
       if (result.rejected.length > 0) {
         setRejectedLicensees(result.rejected);
-        toast.error(`${result.rejected.length} licenciés n'ont pas pu être importés en raison de conflits.`);
+        toast.error(`${result.rejected.length} licenciés n'ont pas pu être importés en raison d'erreurs.`);
       }
       
       // Rafraîchir la liste

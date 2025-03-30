@@ -16,6 +16,7 @@ interface Licensee {
 
 interface ImportResult {
   imported: number;
+  updated: number;
   skipped: number;
   rejected: Licensee[];
 }
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({
         imported: 0,
+        updated: 0,
         skipped: existingLicensees.length,
         rejected: []
       });
@@ -52,6 +54,7 @@ export async function POST(request: NextRequest) {
     
     const result: ImportResult = {
       imported: 0,
+      updated: 0,
       skipped: 0,
       rejected: []
     };
@@ -78,38 +81,49 @@ export async function POST(request: NextRequest) {
         lastName: user.lastName
       };
       
-      // Vérifier si le licencié existe déjà
-      if (existingLicenseesMap.has(licensee.userId)) {
-        const existingLicensee = existingLicenseesMap.get(licensee.userId)!;
+      try {
+        // Utiliser UPSERT (INSERT ... ON CONFLICT ... DO UPDATE)
+        // Cette requête va:
+        // 1. Insérer le licencié s'il n'existe pas
+        // 2. Mettre à jour le licencié s'il existe déjà avec des informations différentes
+        // 3. Ne rien faire si le licencié existe déjà avec les mêmes informations
+        const updateResult = await executeQuery(
+          `INSERT INTO licensees (userId, email, firstName, lastName) 
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (userId) DO UPDATE 
+           SET email = EXCLUDED.email, 
+               firstName = EXCLUDED.firstName, 
+               lastName = EXCLUDED.lastName
+           WHERE 
+             licensees.email != EXCLUDED.email OR 
+             licensees.firstName != EXCLUDED.firstName OR 
+             licensees.lastName != EXCLUDED.lastName
+           RETURNING 
+             (xmax = 0) AS inserted,
+             (xmax <> 0 AND xmax::text <> '0') AS updated`,
+          [licensee.userId, licensee.email, licensee.firstName, licensee.lastName]
+        );
         
-        // Vérifier s'il y a un conflit
-        if (
-          existingLicensee.email !== licensee.email ||
-          existingLicensee.firstName !== licensee.firstName ||
-          existingLicensee.lastName !== licensee.lastName
-        ) {
-          // Conflit détecté
-          console.log(`Conflit détecté pour le licencié ${licensee.userId}`);
-          result.rejected.push(licensee);
-        } else {
-          // Licencié identique, ignorer
-          console.log(`Licencié ${licensee.userId} ignoré (déjà présent)`);
+        if (updateResult.length === 0) {
+          // Aucune modification (licencié identique)
+          console.log(`Licencié ${licensee.userId} ignoré (déjà présent et identique)`);
           result.skipped++;
-        }
-      } else {
-        // Nouveau licencié, l'insérer
-        try {
-          await executeQuery(
-            `INSERT INTO licensees (userId, email, firstName, lastName) 
-             VALUES ($1, $2, $3, $4)`,
-            [licensee.userId, licensee.email, licensee.firstName, licensee.lastName]
-          );
+        } else if (updateResult[0].inserted) {
+          // Nouveau licencié inséré
           console.log(`Licencié ${licensee.userId} importé avec succès`);
           result.imported++;
-        } catch (error) {
-          console.error(`Erreur lors de l'insertion du licencié ${licensee.userId}:`, error);
-          result.rejected.push(licensee);
+        } else if (updateResult[0].updated) {
+          // Licencié existant mis à jour
+          console.log(`Licencié ${licensee.userId} mis à jour avec succès`);
+          result.updated++;
+        } else {
+          // Ce cas ne devrait pas arriver
+          console.log(`Licencié ${licensee.userId} traité mais aucune action spécifique`);
+          result.skipped++;
         }
+      } catch (error) {
+        console.error(`Erreur lors du traitement du licencié ${licensee.userId}:`, error);
+        result.rejected.push(licensee);
       }
     }
     
