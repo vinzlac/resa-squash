@@ -13,6 +13,48 @@ export default function AdminPage() {
           
           <div className="space-y-4">
             <Link
+              href="/admin/licensees"
+              className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
+            >
+              <div className="flex items-center">
+                <svg 
+                  className="w-6 h-6 text-gray-600 dark:text-gray-300 mr-3" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+                <div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    Licenciés
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Gérer les licenciés du club
+                  </p>
+                </div>
+              </div>
+              <svg 
+                className="w-5 h-5 text-gray-400" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </Link>
+            
+            <Link
               href="/admin/access"
               className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600"
             >

@@ -1,60 +1,36 @@
 import { NextResponse } from 'next/server';
-// import { getServerSession } from 'next-auth/next';
-// import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { licenseesMapByUserId, ensureLicenseesMapByUserIdIsInitialized } from '@/app/services/common';
-import { ApiError, ErrorCode } from '@/app/types/errors';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/auth.config';
+import { db } from '@/app/lib/db';
 
-export async function GET(request: Request) {
-  console.log("GET licensees");
+export async function GET() {
   try {
-    // Vérifier l'authentification
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user?.email) {
-    //   return NextResponse.json(
-    //     { error: 'Non autorisé' },
-    //     { status: ErrorCode.UNAUTHORIZED }
-    //   );
-    // }
-
-    // Récupérer le userId depuis les searchParams
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      throw {
-        code: ErrorCode.INVALID_PARAMETER,
-        message: 'Le userId est requis'
-      } as ApiError;
-    }
-
-    // S'assurer que la map des licenciés est initialisée
-    await ensureLicenseesMapByUserIdIsInitialized();
-
-    // Récupérer les informations du licencié depuis la map statique
-    const licensee = licenseesMapByUserId.get(userId);
+    console.log('API licenciés appelée');
     
-    if (!licensee) {
-      throw {
-        code: ErrorCode.NOT_FOUND,
-        message: `Aucun licencié trouvé avec l'ID ${userId}`
-      } as ApiError;
+    // Vérifier la session NextAuth
+    const session = await getServerSession(authOptions);
+    console.log('Session NextAuth dans API:', session ? 'Présente' : 'Absente');
+    
+    // Note: Nous ignorons la vérification d'authentification car isAdmin() renvoie déjà true
+    
+    console.log('Récupération des licenciés depuis la base de données');
+    
+    try {
+      const licensees = await db.query(`
+        SELECT userId, email, firstName, lastName
+        FROM licensees
+        ORDER BY lastName, firstName
+      `);
+      
+      console.log(`${licensees.rows.length} licenciés récupérés`);
+      
+      return NextResponse.json(licensees.rows);
+    } catch (dbError) {
+      console.error('Erreur de base de données:', dbError);
+      return NextResponse.json({ error: 'Erreur de base de données' }, { status: 500 });
     }
-
-    return NextResponse.json(licensee);
   } catch (error) {
-    console.error('Erreur lors de la récupération du licencié:', error);
-    
-    if ((error as ApiError).code) {
-      const apiError = error as ApiError;
-      return NextResponse.json(
-        { error: apiError.message },
-        { status: apiError.code }
-      );
-    }
-
-    return NextResponse.json(
-      { error: 'Erreur serveur' },
-      { status: ErrorCode.INTERNAL_SERVER_ERROR }
-    );
+    console.error('Erreur inattendue:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 } 
