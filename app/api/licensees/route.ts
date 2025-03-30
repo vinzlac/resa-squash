@@ -27,4 +27,24 @@ export async function GET() {
     console.error('Erreur lors de la récupération des licenciés:', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
+}
+
+export async function DELETE() {
+  try {
+    console.log('API suppression de tous les licenciés appelée');
+    
+    // Compter le nombre de licenciés avant suppression
+    const countResult = await executeQuery(`SELECT COUNT(*) FROM licensees`);
+    const count = parseInt(countResult[0].count);
+    
+    // Supprimer tous les licenciés
+    await executeQuery(`DELETE FROM licensees`);
+    
+    console.log(`${count} licenciés supprimés`);
+    
+    return NextResponse.json({ deleted: count });
+  } catch (error) {
+    console.error('Erreur lors de la suppression des licenciés:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
 } 
