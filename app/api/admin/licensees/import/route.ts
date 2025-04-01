@@ -88,8 +88,16 @@ export async function POST(request: NextRequest) {
       existingLicenseesMap.set(licensee.userId, licensee);
     });
     
+    // Convertir la Map en tableau et trier par email pour garantir une consistance entre les appels
+    const licenseeArray = Array.from(teamrLicensees.values())
+      .filter(licenseeTR => licenseeTR.user && licenseeTR.user[0] && licenseeTR.user[0].email)
+      .sort((a, b) => {
+        const emailA = a.user[0].email.toLowerCase();
+        const emailB = b.user[0].email.toLowerCase();
+        return emailA.localeCompare(emailB);
+      });
+    
     // Calculer les indices de début et de fin pour le lot actuel
-    const licenseeArray = Array.from(teamrLicensees.values());
     const startIndex = (batch - 1) * batchSize;
     const endIndex = Math.min(startIndex + batchSize, licenseeArray.length);
     const currentBatchLicensees = licenseeArray.slice(startIndex, endIndex);
@@ -97,6 +105,7 @@ export async function POST(request: NextRequest) {
     // Vérifier s'il y a d'autres lots après celui-ci
     result.hasMore = endIndex < licenseeArray.length;
     result.totalProcessed = Math.min(endIndex, licenseeArray.length);
+    result.totalToProcess = licenseeArray.length; // Mettre à jour avec le nombre réel après filtrage
     
     // Traiter chaque licencié TeamR du lot actuel
     for (const licenseeTR of currentBatchLicensees) {
