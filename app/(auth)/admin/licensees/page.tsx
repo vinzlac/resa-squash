@@ -17,6 +17,11 @@ interface ImportResult {
   updated: number;
   skipped: number;
   rejected: Licensee[];
+  totalProcessed: number;
+  totalToProcess: number;
+  batchSize: number;
+  currentBatch: number;
+  hasMore: boolean;
 }
 
 export default function LicenseesPage() {
@@ -93,40 +98,69 @@ export default function LicenseesPage() {
       setImporting(true);
       setRejectedLicensees([]);
       
-      const response = await fetch('/api/admin/licensees/import', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include' // Inclure les cookies dans la requête
-      });
+      let currentBatch = 1;
+      let hasMore = true;
+      let totalImported = 0;
+      let totalUpdated = 0;
+      let totalSkipped = 0;
+      let allRejected: Licensee[] = [];
+      const batchSize = 50; // Taille du lot
       
-      if (response.status === 401) {
-        // Si on a une erreur d'authentification, on affiche un message mais on continue
-        console.warn('Problème d\'authentification détecté. Tentative d\'import en mode dégradé.');
-        toast.error('Authentification limitée - Fonctionnalités réduites.');
+      // Continuer tant qu'il y a plus de lots à traiter
+      while (hasMore) {
+        const url = `/api/admin/licensees/import?batch=${currentBatch}&batchSize=${batchSize}`;
+        console.log(`Importation du lot ${currentBatch}...`);
         
-        // Attendre un peu et rafraîchir la liste quand même
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await fetchLicensees();
-        return;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include' // Inclure les cookies dans la requête
+        });
+        
+        if (response.status === 401) {
+          // Si on a une erreur d'authentification, on affiche un message mais on continue
+          console.warn('Problème d\'authentification détecté. Tentative d\'import en mode dégradé.');
+          toast.error('Authentification limitée - Fonctionnalités réduites.');
+          
+          // Attendre un peu et rafraîchir la liste quand même
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          await fetchLicensees();
+          return;
+        }
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || `Erreur ${response.status}: ${response.statusText}`);
+        }
+        
+        const result: ImportResult = await response.json();
+        console.log(`Résultat du lot ${currentBatch}:`, result);
+        
+        // Mise à jour du toast pour montrer la progression
+        toast.success(`Importation en cours: ${result.totalProcessed}/${result.totalToProcess} licenciés traités`, 
+          { id: 'import-progress', duration: 5000 });
+        
+        // Cumuler les résultats
+        totalImported += result.imported;
+        totalUpdated += result.updated;
+        totalSkipped += result.skipped;
+        allRejected = [...allRejected, ...result.rejected];
+        
+        // Vérifier s'il y a d'autres lots
+        hasMore = result.hasMore;
+        currentBatch++;
       }
       
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || `Erreur ${response.status}: ${response.statusText}`);
-      }
-      
-      const result: ImportResult = await response.json();
-      console.log('Résultat de l\'import:', result);
-      
-      // Afficher un message de succès/info
-      toast.success(`Import terminé : ${result.imported} licenciés importés, ${result.updated} mis à jour, ${result.skipped} ignorés.`);
+      // Afficher un message de succès final
+      toast.success(`Import terminé : ${totalImported} licenciés importés, ${totalUpdated} mis à jour, ${totalSkipped} ignorés.`, 
+        { id: 'import-complete' });
       
       // Mettre à jour la liste des licenciés rejetés
-      if (result.rejected.length > 0) {
-        setRejectedLicensees(result.rejected);
-        toast.error(`${result.rejected.length} licenciés n'ont pas pu être importés en raison d'erreurs.`);
+      if (allRejected.length > 0) {
+        setRejectedLicensees(allRejected);
+        toast.error(`${allRejected.length} licenciés n'ont pas pu être importés en raison d'erreurs.`);
       }
       
       // Rafraîchir la liste

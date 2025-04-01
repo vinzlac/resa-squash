@@ -19,11 +19,21 @@ interface ImportResult {
   updated: number;
   skipped: number;
   rejected: Licensee[];
+  totalProcessed: number;
+  totalToProcess: number;
+  batchSize: number;
+  currentBatch: number;
+  hasMore: boolean;
 }
 
 export async function POST(request: NextRequest) {
   try {
     console.log('API admin/import licenciés appelée');
+    
+    // Récupérer le paramètre de page et la taille du lot depuis la requête
+    const searchParams = request.nextUrl.searchParams;
+    const batch = parseInt(searchParams.get('batch') || '1', 10);
+    const batchSize = parseInt(searchParams.get('batchSize') || '50', 10);
     
     // Récupérer le token depuis différentes sources
     const cookieToken = extractTeamrToken(request);
@@ -44,7 +54,12 @@ export async function POST(request: NextRequest) {
         imported: 0,
         updated: 0,
         skipped: existingLicensees.length,
-        rejected: []
+        rejected: [],
+        totalProcessed: existingLicensees.length,
+        totalToProcess: existingLicensees.length,
+        batchSize,
+        currentBatch: batch,
+        hasMore: false
       });
     }
     
@@ -56,7 +71,12 @@ export async function POST(request: NextRequest) {
       imported: 0,
       updated: 0,
       skipped: 0,
-      rejected: []
+      rejected: [],
+      totalProcessed: 0,
+      totalToProcess: teamrLicensees.size,
+      batchSize,
+      currentBatch: batch,
+      hasMore: false
     };
     
     // Récupérer tous les licenciés actuels de la base de données
@@ -68,8 +88,18 @@ export async function POST(request: NextRequest) {
       existingLicenseesMap.set(licensee.userId, licensee);
     });
     
-    // Traiter chaque licencié TeamR
-    for (const licenseeTR of Array.from(teamrLicensees.values())) {
+    // Calculer les indices de début et de fin pour le lot actuel
+    const licenseeArray = Array.from(teamrLicensees.values());
+    const startIndex = (batch - 1) * batchSize;
+    const endIndex = Math.min(startIndex + batchSize, licenseeArray.length);
+    const currentBatchLicensees = licenseeArray.slice(startIndex, endIndex);
+    
+    // Vérifier s'il y a d'autres lots après celui-ci
+    result.hasMore = endIndex < licenseeArray.length;
+    result.totalProcessed = Math.min(endIndex, licenseeArray.length);
+    
+    // Traiter chaque licencié TeamR du lot actuel
+    for (const licenseeTR of currentBatchLicensees) {
       if (!licenseeTR.user || !licenseeTR.user[0]) continue;
       
       const user = licenseeTR.user[0];
@@ -127,7 +157,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    console.log('Résultat de l\'import:', result);
+    console.log('Résultat de l\'import (lot', batch, '):', result);
     return NextResponse.json(result);
   } catch (error) {
     console.error('Erreur inattendue:', error);
