@@ -8,7 +8,7 @@ import {
   COORDINATES,
   TEAMR_AUTH_URL,
 } from "./config";
-import { TrLicensee, TrSession, TrBookingResponse } from "./teamrTypes";
+import { TrLicensee, TrSession, TrBookingResponse, TrTransaction } from "./teamrTypes";
 import path from "path";
 import { DayPlanning, CourtPlanning, TimeSlot } from "./types.js";
 import { Reservation } from '@/app/types/reservation';
@@ -527,7 +527,11 @@ export async function deleteBookSession(
 
     // Si la réponse est vide mais le status est OK, on considère que c'est un succès
     if (!responseText) {
-      return { session: {} as TrSession, transaction: {} as any, friendTransaction: {} as any } as TrBookingResponse;
+      return { 
+        session: {} as TrSession, 
+        transaction: {} as TrTransaction, 
+        friendTransaction: {} as TrTransaction 
+      } as TrBookingResponse;
     }
 
     try {
@@ -537,7 +541,11 @@ export async function deleteBookSession(
     } catch (parseError) {
       console.warn('deleteBookSession - Impossible de parser la réponse JSON:', parseError);
       // Si on ne peut pas parser la réponse mais que le status est OK, on considère que c'est un succès
-      return { session: {} as TrSession, transaction: {} as any, friendTransaction: {} as any } as TrBookingResponse;
+      return { 
+        session: {} as TrSession, 
+        transaction: {} as TrTransaction, 
+        friendTransaction: {} as TrTransaction 
+      } as TrBookingResponse;
     }
   } catch (error) {
     console.error("Erreur lors de la suppression de la réservation :", error);
