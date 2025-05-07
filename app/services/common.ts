@@ -467,6 +467,13 @@ export async function deleteBookSession(
   token: string
 ): Promise<TrBookingResponse> {
   try {
+    console.log('deleteBookSession - Paramètres reçus:', {
+      sessionId,
+      userId,
+      friendUserId,
+      token: token ? 'présent' : 'absent'
+    });
+
     const body = JSON.stringify({
       participant: {
         userId: userId,
@@ -478,17 +485,60 @@ export async function deleteBookSession(
       customId: CUSTOM_ID,
     });
 
+    console.log('deleteBookSession - Corps de la requête:', body);
+
     const response = await fetch(BOOKING_URL, {
       method: "POST",
       headers: buildTeamRHeader(token),
       body: body,
     });
 
+    console.log('deleteBookSession - Réponse HTTP:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
+    const responseText = await response.text();
+    console.log('deleteBookSession - Réponse brute:', responseText);
+
     if (!response.ok) {
-      throw new Error(`Erreur HTTP : ${response.status}`);
+      // Gestion spécifique des erreurs courantes
+      if (response.status === 404) {
+        throw {
+          code: ErrorCode.NOT_FOUND,
+          message: 'La réservation n\'existe pas ou a déjà été supprimée'
+        } as ApiError;
+      }
+      
+      if (response.status === 403) {
+        throw {
+          code: ErrorCode.UNAUTHORIZED,
+          message: 'Vous n\'avez pas les droits pour supprimer cette réservation'
+        } as ApiError;
+      }
+
+      // Pour les autres erreurs, on renvoie le message d'erreur de l'API si disponible
+      throw {
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: responseText || 'Erreur lors de la suppression de la réservation'
+      } as ApiError;
     }
 
-    return await response.json();
+    // Si la réponse est vide mais le status est OK, on considère que c'est un succès
+    if (!responseText) {
+      return { session: {} as TrSession, transaction: {} as any, friendTransaction: {} as any } as TrBookingResponse;
+    }
+
+    try {
+      const responseData = JSON.parse(responseText);
+      console.log('deleteBookSession - Données de réponse:', responseData);
+      return responseData;
+    } catch (parseError) {
+      console.warn('deleteBookSession - Impossible de parser la réponse JSON:', parseError);
+      // Si on ne peut pas parser la réponse mais que le status est OK, on considère que c'est un succès
+      return { session: {} as TrSession, transaction: {} as any, friendTransaction: {} as any } as TrBookingResponse;
+    }
   } catch (error) {
     console.error("Erreur lors de la suppression de la réservation :", error);
     throw error;
