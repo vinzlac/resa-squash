@@ -325,14 +325,18 @@ export async function fetchSessionsForCourt(
 
   console.log("fetchSessionsForCourt for clubId : ", clubId);
   console.log("fetchSessionsForCourt for date : ", date);
+  
+  const payload = {
+    filters: { clubId, coordinates: COORDINATES, date },
+    coordinates: COORDINATES,
+    customId: CUSTOM_ID,
+  };
+  console.log("📤 fetchSessionsForCourt - Payload envoyé:", JSON.stringify(payload, null, 2));
+  
   const response = await fetch(GET_SESSION_URL, {
     method: "POST",
     headers: buildTeamRHeader(token),
-    body: JSON.stringify({
-      filters: { clubId, coordinates: COORDINATES, date },
-      coordinates: COORDINATES,
-      customId: CUSTOM_ID,
-    }),
+    body: JSON.stringify(payload),
   });
 
   console.log("called url : ", GET_SESSION_URL);
@@ -421,7 +425,7 @@ export async function bookSession(
   token: string
 ): Promise<TrBookingResponse> {
   try {
-    const body = JSON.stringify({
+    const payload = {
       participant: {
         userId: userId,
         isPresent: "yes",
@@ -430,7 +434,10 @@ export async function bookSession(
       },
       sessionId: sessionId,
       customId: CUSTOM_ID,
-    });
+    };
+
+    console.log("📤 bookSession - Payload envoyé:", JSON.stringify(payload, null, 2));
+    const body = JSON.stringify(payload);
 
     const response = await fetch(BOOKING_URL, {
       method: "POST",
@@ -453,7 +460,11 @@ export async function bookSession(
       throw new Error(`Erreur HTTP : ${response.status}`);
     }
 
-    return responseText ? JSON.parse(responseText) : null;
+    return responseText ? JSON.parse(responseText) : { 
+      session: {} as TrSession, 
+      transaction: {} as TrTransaction, 
+      friendTransaction: {} as TrTransaction 
+    } as TrBookingResponse;
   } catch (error) {
     console.error("Erreur lors de la réservation :", error);
     throw error;
@@ -474,7 +485,7 @@ export async function deleteBookSession(
       token: token ? 'présent' : 'absent'
     });
 
-    const body = JSON.stringify({
+    const payload = {
       participant: {
         userId: userId,
         isPresent: "no",
@@ -483,9 +494,10 @@ export async function deleteBookSession(
       },
       sessionId: sessionId,
       customId: CUSTOM_ID,
-    });
+    };
 
-    console.log('deleteBookSession - Corps de la requête:', body);
+    console.log("📤 deleteBookSession - Payload envoyé:", JSON.stringify(payload, null, 2));
+    const body = JSON.stringify(payload);
 
     const response = await fetch(BOOKING_URL, {
       method: "POST",
@@ -597,6 +609,16 @@ export async function authenticateUser(email: string, password: string): Promise
     },
     coachAuthentication: false,
   };
+
+  // Log du payload sans afficher le mot de passe en clair pour des raisons de sécurité
+  const logPayload = {
+    ...authRequest,
+    credentials: { 
+      email: authRequest.credentials.email, 
+      password: '***' 
+    }
+  };
+  console.log("📤 authenticateUser - Payload envoyé:", JSON.stringify(logPayload, null, 2));
 
   const response = await fetch(TEAMR_AUTH_URL, {
     method: 'POST',

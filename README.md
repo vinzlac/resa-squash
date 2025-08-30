@@ -44,6 +44,11 @@ Pour lancer avec le débogueur Node.js :
 npm run debug
 ```
 
+Pour lancer postgresql en docker
+```bash
+docker run --name postgres-squash-local  -e POSTGRES_PASSWORD=password -e POSTGRES_USER=default -e POSTGRES_DB=verceldb -p 5432:5432 -d postgres
+```
+
 ## Production
 
 Pour construire et lancer l'application en production localement :
