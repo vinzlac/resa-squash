@@ -8,7 +8,7 @@ import {
   COORDINATES,
   TEAMR_AUTH_URL,
 } from "./config";
-import { TrLicensee, TrSession, TrBookingResponse, TrTransaction } from "./teamrTypes";
+import { TrLicensee, TrSession, TrBookingResponse, TrTransaction, TrNoCreditsError } from "./teamrTypes";
 import path from "path";
 import { DayPlanning, CourtPlanning, TimeSlot } from "./types.js";
 import { Reservation } from '@/app/types/reservation';
@@ -418,6 +418,20 @@ export async function fetchPlanning(date: string, token: string): Promise<DayPla
   };
 }
 
+// Fonction utilitaire pour vérifier si la réponse est une erreur noCredits
+function isNoCreditsError(responseText: string): TrNoCreditsError | null {
+  try {
+    const parsed = JSON.parse(responseText);
+    if (parsed && typeof parsed === 'object' && 
+        'status' in parsed && 'name' in parsed && 'message' in parsed) {
+      return parsed as TrNoCreditsError;
+    }
+  } catch {
+    // Si ce n'est pas du JSON valide, ce n'est pas une erreur noCredits
+  }
+  return null;
+}
+
 export async function bookSession(
   sessionId: string,
   userId: string,
@@ -455,7 +469,16 @@ export async function bookSession(
       } as ApiError;
     }
 
-    // Si ce n'est pas "already booked", on essaie de parser le JSON
+    // Vérifier si c'est une erreur de type noCredits
+    const noCreditsError = isNoCreditsError(responseText);
+    if (noCreditsError) {
+      throw {
+        code: ErrorCode.INVALID_PARAMETER,
+        message: `${noCreditsError.message} (${noCreditsError.status})`
+      } as ApiError;
+    }
+
+    // Si ce n'est pas "already booked" ni "noCredits", on essaie de parser le JSON
     if (!response.ok) {
       throw new Error(`Erreur HTTP : ${response.status}`);
     }

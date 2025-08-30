@@ -116,3 +116,9 @@ interface TrClub {
     transaction: TrTransaction;
     friendTransaction: TrTransaction;
   }
+  
+  export interface TrNoCreditsError {
+    status: string;
+    name: string;
+    message: string;
+  }
