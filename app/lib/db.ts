@@ -1,6 +1,7 @@
 import { sql as vercelSql } from "@vercel/postgres";
 import { Pool } from 'pg';
 import { cache } from "react";
+import { Licensee } from '@/app/types/licensee';
 
 // Log des variables d'environnement au démarrage
 
@@ -57,6 +58,7 @@ export const getFavorites = cache(async (userId: string) => {
   }
 });
 
+
 export async function addFavorite(userId: string, licenseeId: string) {
   try {
     await executeQuery(
@@ -110,5 +112,29 @@ export async function removeReservationIntoDB(sessionId: string) {
   } catch (error) {
     console.error(`Error logging reservation deletion:`, error);
     // Ne pas propager l'erreur pour ne pas bloquer le flux principal
+  }
+}
+
+// Fonction pour récupérer tous les licenciés depuis la base de données
+export async function getAllLicensees(): Promise<Licensee[]> {
+  try {
+    const dbLicensees = await executeQuery(`
+      SELECT userId, email, firstName, lastName
+      FROM licensees
+      ORDER BY lastName, firstName
+    `);
+    
+    // Normaliser les noms de champs pour correspondre au format attendu
+    const licensees: Licensee[] = dbLicensees.map(licensee => ({
+      userId: licensee.userid || licensee.userId,
+      email: licensee.email,
+      firstName: licensee.firstname || licensee.firstName,
+      lastName: licensee.lastname || licensee.lastName
+    }));
+    
+    return licensees;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des licenciés:', error);
+    throw error;
   }
 }

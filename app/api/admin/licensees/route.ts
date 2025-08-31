@@ -1,25 +1,12 @@
 import { NextResponse } from 'next/server';
-import { executeQuery } from '@/app/lib/db';
-import { Licensee } from '@/app/types/licensee';
+import { executeQuery, getAllLicensees } from '@/app/lib/db';
 
 export async function GET() {
   try {
     console.log('API admin/licencees appelée');
     
-    // Récupérer les licenciés de la base de données
-    const dbLicensees = await executeQuery(`
-      SELECT userId, email, firstName, lastName
-      FROM licensees
-      ORDER BY lastName, firstName
-    `);
-    
-    // Normaliser les noms de champs pour correspondre au format attendu par le client
-    const licensees: Licensee[] = dbLicensees.map(licensee => ({
-      userId: licensee.userid || licensee.userId,
-      email: licensee.email,
-      firstName: licensee.firstname || licensee.firstName,
-      lastName: licensee.lastname || licensee.lastName
-    }));
+    // Utiliser la fonction centralisée pour récupérer les licenciés
+    const licensees = await getAllLicensees();
     
     console.log(`${licensees.length} licenciés récupérés`);
     

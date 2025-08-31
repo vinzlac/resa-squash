@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+
 import {
   GET_LICENSEE_URL,
   BOOKING_URL,
@@ -9,16 +9,15 @@ import {
   TEAMR_AUTH_URL,
 } from "./config";
 import { TrSession, TrBookingResponse, TrTransaction, TrNoCreditsError } from "./teamrTypes";
-import path from "path";
+
 import { DayPlanning, CourtPlanning, TimeSlot } from "./types.js";
 import { Reservation } from '@/app/types/reservation';
 import { TeamRAuthRequest, TeamRAuthResponse } from '@/app/types/teamr';
 import { buildTeamRHeader } from '@/app/utils/auth';
 import { ErrorCode, ApiError } from '@/app/types/errors';
 import { TrLicensee as TrLicenseeFromTypes } from '@/app/types/TrLicencees';
-
-// Variable statique pour stocker la map des licenciés par userId
-export let licenseesMapByUserId: Map<string, TrLicenseeFromTypes> = new Map();
+import { Licensee } from '@/app/types/licensee';
+import { getAllLicensees } from '@/app/lib/db';
 
 // Variable pour stocker le token
 let globalTeamrToken: string | undefined;
@@ -33,141 +32,31 @@ export function getGlobalTeamrToken(): string | undefined {
   return globalTeamrToken;
 }
 
-// Définir le chemin relatif correct
-const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
-// ou
-// const LICENCIES_FILE = "./allLicencies.json"; // si le fichier est dans le même dossier
-
-export async function getLicenciesMapByUserIdWithoutToken(): Promise<Map<string, TrLicenseeFromTypes>> {
+export async function getLicenciesMapByUserId(): Promise<Map<string, Licensee>> {
   console.log("getLicenciesMapByUserId");
   
-  // Si la map statique est déjà remplie, on la retourne directement
-  if (licenseesMapByUserId.size > 0) {
-    console.log("📂 Utilisation de la map en mémoire...");
-    return licenseesMapByUserId;
-  }
   
   try {
-    console.log("📂 Chargement des licenciés depuis le fichier local...");
-    const data = await fs.readFile(LICENCIES_FILE, "utf-8");
+    console.log("📂 Chargement des licenciés depuis la base de données...");
+    const licensees = await getAllLicensees();
 
-    const licenseeMap = new Map<string, TrLicenseeFromTypes>();
+    const licenseeMap = new Map<string, Licensee>();
 
-    JSON.parse(data).forEach((licencie: TrLicenseeFromTypes) => {
-      if (licencie.user.length > 0) {
-        const user = licencie.user[0];
-        licenseeMap.set(user._id, {
-          user: [{
-            _id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email
-          }]
-        });
-      }
+    licensees.forEach((licensee) => {
+      licenseeMap.set(licensee.userId, {
+        userId: licensee.userId,
+        firstName: licensee.firstName,
+        lastName: licensee.lastName,
+        email: licensee.email
+      });
     });
 
-    // Mettre à jour la map statique
-    licenseesMapByUserId = licenseeMap;
-
-    console.log("final licenseesMapByUserId size : ", licenseesMapByUserId.size);
+    console.log("final licenseeMap size : ", licenseeMap.size);
     return licenseeMap;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      console.log("🔄 Fichier non trouvé - retourne map vide");
-      return new Map();
-    } else {
-      throw error;
-    }
-  }
-}
-
-// Fonction pour charger ou récupérer les licenciés
-export async function getLicenciesMapByUserId(token: string): Promise<Map<string, TrLicenseeFromTypes>> {
-  console.log("getLicenciesMapByUserId");
-  
-  // Si la map statique est déjà remplie, on la retourne directement
-  if (licenseesMapByUserId.size > 0) {
-    console.log("📂 Utilisation de la map en mémoire...");
-    return licenseesMapByUserId;
-  }
-  
-  try {
-    console.log("📂 Chargement des licenciés depuis le fichier local...");
-    const data = await fs.readFile(LICENCIES_FILE, "utf-8");
-
-    const licenseeMap = new Map<string, TrLicenseeFromTypes>();
-
-    JSON.parse(data).forEach((licencie: TrLicenseeFromTypes) => {
-      if (licencie.user.length > 0) {
-        const user = licencie.user[0];
-        licenseeMap.set(user._id, {
-          user: [{
-            _id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email
-          }]
-        });
-      }
-    });
-
-    // Mettre à jour la map statique
-    licenseesMapByUserId = licenseeMap;
-
-    console.log("final licenseesMapByUserId size : ", licenseesMapByUserId.size);
-    return licenseeMap;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      console.log("🔄 Fichier non trouvé. Récupération depuis l'API...");
-      const licenseeMap = await fetchAllLicenseesByUserId(token);
-      // Mettre à jour la map statique
-      licenseesMapByUserId = licenseeMap;
-      console.log("final licenseesMapByUserId size : ", licenseesMapByUserId.size);
-      return licenseeMap;
-    } else {
-      throw error;
-    }
-  }
-}
-
-// Fonction pour récupérer tous les licenciés depuis l'API et les enregistrer en cache
-async function fetchAllLicenseesByUserId(token: string): Promise<
-  Map<string, TrLicenseeFromTypes>
-> {
-  const firstClubId = Object.values(COURT_CLUB_IDS)[0];
-  const url = `${GET_LICENSEE_URL}/${firstClubId}`;
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: buildTeamRHeader(token),
-  });
-
-  if (!response.ok) {
-    console.error(
-      `❌ Erreur HTTP ${response.status} lors de la récupération des licenciés.`
-    );
+    console.error("Erreur lors du chargement des licenciés depuis la base de données:", error);
     return new Map();
   }
-
-  const data = (await response.json()) as TrLicenseeFromTypes[];
-  const licenseeMap = new Map<string, TrLicenseeFromTypes>();
-
-  data.forEach((licencie) => {
-    if (licencie.user.length > 0) {
-      const user = licencie.user[0];
-      licenseeMap.set(user._id, {
-        user: [{
-          _id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email
-        }]
-      });
-    }
-  });
-
-  return licenseeMap;
 }
 
 // Fonction pour récupérer tous les licenciés depuis l'API avec l'email comme clé
@@ -255,7 +144,7 @@ export async function fetchSessionsForCourt(
 // Fonction pour récupérer le planning complet
 export async function fetchPlanning(date: string, token: string): Promise<DayPlanning> {
   console.log("fetchPlanning for DATE : ", date);
-  const licenseeMapByUserId = await getLicenciesMapByUserId(token);
+  const licenseeMapByUserId = await getLicenciesMapByUserId();
   console.log("licenseeMap size : ", licenseeMapByUserId.size);
   const courts: CourtPlanning[] = [];
 
@@ -284,15 +173,15 @@ export async function fetchPlanning(date: string, token: string): Promise<DayPla
         sessionId: session._id,
         participants: allParticipantIds.map((userId) => {
           const licensee = licenseeMapByUserId.get(userId);
-          const user = licensee ? licensee.user[0] : {
-            _id: userId,
+          const user = licensee ? licensee : {
+            userId: userId,
             firstName: "Inconnu",
             lastName: "Inconnu",
             email: ""
           };
           
           return {
-            id: user._id,
+            id: user.userId,
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
@@ -555,37 +444,5 @@ export async function authenticateUser(email: string, password: string): Promise
   // Stocker le token global
   setGlobalTeamrToken(authResponse.token);
   
-  // // Initialiser les maps des licenciés après l'authentification
-  // console.log("🔄 Initialisation des maps des licenciés...");
-  // await Promise.all([
-  //   getLicenciesMapByEmail(authResponse.token),
-  //   getLicenciesMapByUserId(authResponse.token)
-  // ]);
-  // console.log(`✅ Map des licenciés par userId initialisée avec ${licenseesMapByUserId.size} entrées`);
-  
   return authResponse;
-}
-
-
-
-// Fonction pour s'assurer que la map des licenciés par userId est initialisée
-export async function ensureLicenseesMapByUserIdIsInitialized(tokenParam?: string): Promise<void> {
-  console.log("Vérification de l'initialisation de licenseesMapByUserId...");
-  console.log("Taille actuelle: ", licenseesMapByUserId.size);
-  
-  if (licenseesMapByUserId.size === 0) {
-    // Utiliser le token passé en paramètre ou le token global
-    const token = tokenParam || globalTeamrToken;
-    
-    if (token) {
-      console.log("Initialisation de licenseesMapByUserId...");
-      await getLicenciesMapByUserId(token);
-      console.log("licenseesMapByUserId initialisée avec", licenseesMapByUserId.size, "entrées");
-    } else {
-      console.warn("Aucun token disponible pour initialiser licenseesMapByUserId");
-      console.log("Initialisation de licenseesMapByUserId sans token...");
-      await getLicenciesMapByUserIdWithoutToken();
-      console.log("licenseesMapByUserId initialisée avec", licenseesMapByUserId.size, "entrées");
-    }
-  }
 }

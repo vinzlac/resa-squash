@@ -1,6 +1,6 @@
 import { AuthOptions, User } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { authenticateUser, ensureLicenseesMapByUserIdIsInitialized } from '@/app/services/common';
+import { authenticateUser } from '@/app/services/common';
 
 interface CustomUser extends User {
   accessToken: string;
@@ -27,11 +27,6 @@ export const authOptions: AuthOptions = {
 
         try {
           const response = await authenticateUser(credentials.email, credentials.password);
-          
-          // Initialiser la map après une authentification réussie
-          console.log("🔄 Initialisation de la map des licenciés après authentification...");
-          await ensureLicenseesMapByUserIdIsInitialized(response.token);
-          console.log("✅ Map des licenciés initialisée avec succès");
           
           return {
             id: response.userId,
