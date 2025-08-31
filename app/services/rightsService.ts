@@ -1,6 +1,5 @@
 import { executeQuery } from '@/app/lib/db';
 import { UserRight, UserRights } from '@/app/types/rights';
-import { licenseesMapByEmail } from '@/app/services/common';
 import { Licensee } from '@/app/types/licensee';
 
 // Create a new migration for user_rights table
@@ -13,43 +12,27 @@ import { Licensee } from '@/app/types/licensee';
 
 export async function getAuthorizedUsersWithNames(): Promise<Licensee[]> {
   try {
-    // Récupérer uniquement les emails des utilisateurs autorisés
-    const result = await executeQuery(
-      'SELECT email FROM authorized_users ORDER BY email ASC'
-    );
+    // Faire une jointure directe entre authorized_users et licensees
+    const result = await executeQuery(`
+      SELECT 
+        l.userId,
+        l.email,
+        l.firstName, 
+        l.lastName
+      FROM authorized_users au
+      INNER JOIN licensees l ON au.email = l.email
+      ORDER BY l.lastName ASC, l.firstName ASC
+    `);
     
-    console.log("licenseesMapByEmail size : ", licenseesMapByEmail.size);
-
-    const authorizedUsers: Licensee[] = [];
+    console.log(`Nombre d'utilisateurs autorisés trouvés: ${result.length}`);
     
-    // Utiliser la map licenseesMapByEmail pour enrichir les données
-    for (const row of result) {
-      const email = row.email;
-      const licensee = licenseesMapByEmail.get(email);
-      
-      // Ne garder que les utilisateurs qui existent dans la map
-      if (licensee && licensee.user && licensee.user.length > 0) {
-        const user = licensee.user[0];
-        authorizedUsers.push({
-          userId: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: email
-        });
-      } else {
-        console.log(`Utilisateur autorisé avec email ${email} non trouvé dans la map`);
-      }
-    }
-    
-    console.log(`Nombre d'utilisateurs autorisés trouvés: ${authorizedUsers.length}`);
-    
-    // Trier par nom puis prénom
-    return authorizedUsers.sort((a, b) => {
-      if (a.lastName !== b.lastName) {
-        return a.lastName.localeCompare(b.lastName);
-      }
-      return a.firstName.localeCompare(b.firstName);
-    });
+    // Normaliser les noms de champs pour correspondre au format attendu
+    return result.map(row => ({
+      userId: row.userid || row.userId,
+      email: row.email,
+      firstName: row.firstname || row.firstName,
+      lastName: row.lastname || row.lastName
+    }));
   } catch (error) {
     console.error('Erreur lors de la récupération des utilisateurs autorisés:', error);
     return [];
