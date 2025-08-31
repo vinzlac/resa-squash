@@ -1,6 +1,7 @@
 import { executeQuery } from '@/app/lib/db';
-import { UserRight, UserRights, UserWithName } from '@/app/types/rights';
+import { UserRight, UserRights } from '@/app/types/rights';
 import { licenseesMapByEmail } from '@/app/services/common';
+import { Licensee } from '@/app/types/licensee';
 
 // Create a new migration for user_rights table
 // CREATE TABLE IF NOT EXISTS user_rights (
@@ -10,7 +11,7 @@ import { licenseesMapByEmail } from '@/app/services/common';
 //   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 // );
 
-export async function getAuthorizedUsersWithNames(): Promise<UserWithName[]> {
+export async function getAuthorizedUsersWithNames(): Promise<Licensee[]> {
   try {
     // Récupérer uniquement les emails des utilisateurs autorisés
     const result = await executeQuery(
@@ -19,7 +20,7 @@ export async function getAuthorizedUsersWithNames(): Promise<UserWithName[]> {
     
     console.log("licenseesMapByEmail size : ", licenseesMapByEmail.size);
 
-    const authorizedUsers: UserWithName[] = [];
+    const authorizedUsers: Licensee[] = [];
     
     // Utiliser la map licenseesMapByEmail pour enrichir les données
     for (const row of result) {
@@ -30,7 +31,7 @@ export async function getAuthorizedUsersWithNames(): Promise<UserWithName[]> {
       if (licensee && licensee.user && licensee.user.length > 0) {
         const user = licensee.user[0];
         authorizedUsers.push({
-          id: user._id,
+          userId: user._id,
           firstName: user.firstName,
           lastName: user.lastName,
           email: email

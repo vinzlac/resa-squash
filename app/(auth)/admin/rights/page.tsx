@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserWithName, UserRight, UserRights } from '@/app/types/rights';
+import { UserRight, UserRights } from '@/app/types/rights';
+import { Licensee } from '@/app/types/licensee';
 
 export default function AdminRightsPage() {
-  const [users, setUsers] = useState<UserWithName[]>([]);
+  const [users, setUsers] = useState<Licensee[]>([]);
   const [userRights, setUserRights] = useState<UserRights[]>([]);
-  const [selectedUser, setSelectedUser] = useState<UserWithName | null>(null);
+  const [selectedUser, setSelectedUser] = useState<Licensee | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -44,7 +45,7 @@ export default function AdminRightsPage() {
     return userRightEntry ? userRightEntry.rights : [];
   };
 
-  const handleUserSelect = (user: UserWithName) => {
+  const handleUserSelect = (user: Licensee) => {
     setSelectedUser(user);
   };
 
@@ -58,7 +59,7 @@ export default function AdminRightsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: selectedUser.id,
+          userId: selectedUser.userId,
           right,
           action: 'add'
         }),
@@ -70,7 +71,7 @@ export default function AdminRightsPage() {
       
       // Update local state
       setUserRights(prev => {
-        const existingUserRightIndex = prev.findIndex(ur => ur.userId === selectedUser.id);
+        const existingUserRightIndex = prev.findIndex(ur => ur.userId === selectedUser.userId);
         
         if (existingUserRightIndex >= 0) {
           // User already has some rights, add the new one
@@ -87,7 +88,7 @@ export default function AdminRightsPage() {
           return updatedUserRights;
         } else {
           // User has no rights yet, create a new entry
-          return [...prev, { userId: selectedUser.id, rights: [right] }];
+          return [...prev, { userId: selectedUser.userId, rights: [right] }];
         }
       });
     } catch (error) {
@@ -106,7 +107,7 @@ export default function AdminRightsPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: selectedUser.id,
+          userId: selectedUser.userId,
           right,
           action: 'remove'
         }),
@@ -118,7 +119,7 @@ export default function AdminRightsPage() {
       
       // Update local state
       setUserRights(prev => {
-        const existingUserRightIndex = prev.findIndex(ur => ur.userId === selectedUser.id);
+        const existingUserRightIndex = prev.findIndex(ur => ur.userId === selectedUser.userId);
         
         if (existingUserRightIndex >= 0) {
           const updatedUserRights = [...prev];
@@ -142,13 +143,13 @@ export default function AdminRightsPage() {
 
   const getAssignedRights = (): UserRight[] => {
     if (!selectedUser) return [];
-    return getUserRightsById(selectedUser.id);
+    return getUserRightsById(selectedUser.userId);
   };
 
   const getUnassignedRights = (): UserRight[] => {
     if (!selectedUser) return Object.values(UserRight);
     
-    const assignedRights = getUserRightsById(selectedUser.id);
+    const assignedRights = getUserRightsById(selectedUser.userId);
     return Object.values(UserRight).filter(right => !assignedRights.includes(right));
   };
 
@@ -186,9 +187,9 @@ export default function AdminRightsPage() {
                     <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                       {users.map(user => (
                         <li 
-                          key={user.id}
+                          key={user.userId}
                           className={`py-3 px-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                            selectedUser?.id === user.id ? 'bg-blue-50 dark:bg-blue-900' : ''
+                            selectedUser?.userId === user.userId ? 'bg-blue-50 dark:bg-blue-900' : ''
                           }`}
                           onClick={() => handleUserSelect(user)}
                         >

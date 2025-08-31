@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserRights, addUserRight, removeUserRight, getAllUserRights, getAuthorizedUsersWithNames } from '@/app/services/rightsService';
 import { UserRight } from '@/app/types/rights';
 import { ApiErrorResponse, ApiSuccessResponse } from '@/app/types/api';
-import { mockUsers, mockUserRights } from '@/app/mocks/userRights';
 import { ensureLicenseesMapByEmailIsInitialized, setGlobalTeamrToken } from '@/app/services/common';
-
-// Set to true to use mock data, false to use real data
-const USE_MOCK_DATA = false;
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,33 +21,19 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const userId = url.searchParams.get('userId');
     
-    if (USE_MOCK_DATA) {
-      if (userId) {
-        // Get rights for a specific user
-        const userRights = mockUserRights.find(ur => ur.userId === userId);
-        return NextResponse.json({ rights: userRights?.rights || [] });
-      } else {
-        // Get all users with their rights
-        return NextResponse.json({ 
-          users: mockUsers,
-          userRights: mockUserRights
-        });
-      }
+    if (userId) {
+      // Get rights for a specific user
+      const rights = await getUserRights(userId);
+      return NextResponse.json({ rights });
     } else {
-      if (userId) {
-        // Get rights for a specific user
-        const rights = await getUserRights(userId);
-        return NextResponse.json({ rights });
-      } else {
-        // Get all users with their rights
-        const users = await getAuthorizedUsersWithNames();
-        const allRights = await getAllUserRights();
-        
-        return NextResponse.json({ 
-          users,
-          userRights: allRights
-        });
-      }
+      // Get all users with their rights
+      const users = await getAuthorizedUsersWithNames();
+      const allRights = await getAllUserRights();
+      
+      return NextResponse.json({ 
+        users,
+        userRights: allRights
+      });
     }
   } catch (error) {
     console.error('Error fetching user rights:', error);
@@ -81,18 +63,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (USE_MOCK_DATA) {
-      // For mock data, we'll just return success without actually modifying anything
-      return NextResponse.json({ success: true } as ApiSuccessResponse);
+    if (action === 'add') {
+      await addUserRight(userId, right as UserRight);
     } else {
-      if (action === 'add') {
-        await addUserRight(userId, right as UserRight);
-      } else {
-        await removeUserRight(userId, right as UserRight);
-      }
-
-      return NextResponse.json({ success: true } as ApiSuccessResponse);
+      await removeUserRight(userId, right as UserRight);
     }
+
+    return NextResponse.json({ success: true } as ApiSuccessResponse);
   } catch (error) {
     console.error('Error updating user rights:', error);
     return NextResponse.json(
