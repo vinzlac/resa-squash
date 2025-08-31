@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserRights, addUserRight, removeUserRight, getAllUserRights, getAuthorizedUsersWithNames } from '@/app/services/rightsService';
+import { getUserRights, addUserRight, removeUserRight, getAllUserRights, getAuthorizedLicensees } from '@/app/services/rightsService';
 import { UserRight } from '@/app/types/rights';
 import { ApiErrorResponse, ApiSuccessResponse } from '@/app/types/api';
 import { setGlobalTeamrToken } from '@/app/services/common';
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ rights });
     } else {
       // Get all users with their rights
-      const users = await getAuthorizedUsersWithNames();
+      const users = await getAuthorizedLicensees();
       const allRights = await getAllUserRights();
       
       return NextResponse.json({ 

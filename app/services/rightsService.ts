@@ -10,7 +10,7 @@ import { Licensee } from '@/app/types/licensee';
 //   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 // );
 
-export async function getAuthorizedUsersWithNames(): Promise<Licensee[]> {
+export async function getAuthorizedLicensees(): Promise<Licensee[]> {
   try {
     // Faire une jointure directe entre authorized_users et licensees
     const result = await executeQuery(`
