@@ -6,13 +6,7 @@ import { fetchAllLicenseesByEmail } from '@/app/services/common';
 import { getGlobalTeamrToken } from '@/app/services/common';
 import { extractTeamrToken } from '@/app/utils/auth';
 import { NextRequest } from 'next/server';
-
-interface Licensee {
-  userId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-}
+import { Licensee } from '@/app/types/licensee';
 
 interface ImportResult {
   imported: number;

@@ -4,13 +4,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserRights } from '@/app/hooks/useUserRights';
 import { toast } from 'react-hot-toast';
-
-interface Licensee {
-  userId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-}
+import { Licensee } from '@/app/types/licensee';
 
 interface ImportResult {
   imported: number;
@@ -82,7 +76,7 @@ export default function LicenseesPage() {
         throw new Error(data.error || `Erreur ${response.status}: ${response.statusText}`);
       }
       
-      const data = await response.json();
+      const data: Licensee[] = await response.json();
       console.log('Licenciés récupérés:', data);
       setLicensees(data);
     } catch (error) {

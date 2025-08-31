@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { executeQuery } from '@/app/lib/db';
+import { Licensee } from '@/app/types/licensee';
 
 export async function GET() {
   try {
@@ -13,7 +14,7 @@ export async function GET() {
     `);
     
     // Normaliser les noms de champs pour correspondre au format attendu par le client
-    const licensees = dbLicensees.map(licensee => ({
+    const licensees: Licensee[] = dbLicensees.map(licensee => ({
       userId: licensee.userid || licensee.userId,
       email: licensee.email,
       firstName: licensee.firstname || licensee.firstName,
