@@ -8,20 +8,20 @@ import {
   COORDINATES,
   TEAMR_AUTH_URL,
 } from "./config";
-import { TrLicensee, TrSession, TrBookingResponse, TrTransaction, TrNoCreditsError } from "./teamrTypes";
+import { TrSession, TrBookingResponse, TrTransaction, TrNoCreditsError } from "./teamrTypes";
 import path from "path";
 import { DayPlanning, CourtPlanning, TimeSlot } from "./types.js";
 import { Reservation } from '@/app/types/reservation';
 import { TeamRAuthRequest, TeamRAuthResponse } from '@/app/types/teamr';
 import { buildTeamRHeader } from '@/app/utils/auth';
 import { ErrorCode, ApiError } from '@/app/types/errors';
-import { Licensee } from '@/app/types/licensee';
+import { TrLicensee as TrLicenseeFromTypes } from '@/app/types/TrLicencees';
 
 // Variable statique pour stocker la map des licenciés par email
-export let licenseesMapByEmail: Map<string, Licensee> = new Map();
+export let licenseesMapByEmail: Map<string, TrLicenseeFromTypes> = new Map();
 
 // Variable statique pour stocker la map des licenciés par userId
-export let licenseesMapByUserId: Map<string, Licensee> = new Map();
+export let licenseesMapByUserId: Map<string, TrLicenseeFromTypes> = new Map();
 
 // Variable pour stocker le token
 let globalTeamrToken: string | undefined;
@@ -41,7 +41,7 @@ const LICENCIES_FILE = path.join(process.cwd(), "public/allLicencies.json");
 // ou
 // const LICENCIES_FILE = "./allLicencies.json"; // si le fichier est dans le même dossier
 
-export async function getLicenciesMapByUserIdWithoutToken(): Promise<Map<string, Licensee>> {
+export async function getLicenciesMapByUserIdWithoutToken(): Promise<Map<string, TrLicenseeFromTypes>> {
   console.log("getLicenciesMapByUserId");
   
   // Si la map statique est déjà remplie, on la retourne directement
@@ -54,9 +54,9 @@ export async function getLicenciesMapByUserIdWithoutToken(): Promise<Map<string,
     console.log("📂 Chargement des licenciés depuis le fichier local...");
     const data = await fs.readFile(LICENCIES_FILE, "utf-8");
 
-    const licenseeMap = new Map<string, Licensee>();
+    const licenseeMap = new Map<string, TrLicenseeFromTypes>();
 
-    JSON.parse(data).forEach((licencie: TrLicensee) => {
+    JSON.parse(data).forEach((licencie: TrLicenseeFromTypes) => {
       if (licencie.user.length > 0) {
         const user = licencie.user[0];
         licenseeMap.set(user._id, {
@@ -86,7 +86,7 @@ export async function getLicenciesMapByUserIdWithoutToken(): Promise<Map<string,
 }
 
 // Fonction pour charger ou récupérer les licenciés
-export async function getLicenciesMapByUserId(token: string): Promise<Map<string, Licensee>> {
+export async function getLicenciesMapByUserId(token: string): Promise<Map<string, TrLicenseeFromTypes>> {
   console.log("getLicenciesMapByUserId");
   
   // Si la map statique est déjà remplie, on la retourne directement
@@ -99,9 +99,9 @@ export async function getLicenciesMapByUserId(token: string): Promise<Map<string
     console.log("📂 Chargement des licenciés depuis le fichier local...");
     const data = await fs.readFile(LICENCIES_FILE, "utf-8");
 
-    const licenseeMap = new Map<string, Licensee>();
+    const licenseeMap = new Map<string, TrLicenseeFromTypes>();
 
-    JSON.parse(data).forEach((licencie: TrLicensee) => {
+    JSON.parse(data).forEach((licencie: TrLicenseeFromTypes) => {
       if (licencie.user.length > 0) {
         const user = licencie.user[0];
         licenseeMap.set(user._id, {
@@ -135,7 +135,7 @@ export async function getLicenciesMapByUserId(token: string): Promise<Map<string
 }
 
 export async function getLicenciesMapByEmailWithoutToken(): Promise<
-  Map<string, Licensee>
+  Map<string, TrLicenseeFromTypes>
 > {
   console.log("getLicenciesMapByEmailWithoutToken");
   
@@ -149,9 +149,9 @@ export async function getLicenciesMapByEmailWithoutToken(): Promise<
     console.log("📂 Chargement des licenciés depuis le fichier local...");
     const data = await fs.readFile(LICENCIES_FILE, "utf-8");
 
-    const licenseeMap = new Map<string, Licensee>();
+    const licenseeMap = new Map<string, TrLicenseeFromTypes>();
 
-    JSON.parse(data).forEach((licencie: TrLicensee) => {
+    JSON.parse(data).forEach((licencie: TrLicenseeFromTypes) => {
       if (licencie.user.length > 0) {
         const user = licencie.user[0];
         if (user.email) { // Vérifier que l'email existe
@@ -184,7 +184,7 @@ export async function getLicenciesMapByEmailWithoutToken(): Promise<
 
 // Fonction pour charger ou récupérer les licenciés avec l'email comme clé
 export async function getLicenciesMapByEmail(token: string): Promise<
-  Map<string, Licensee>
+  Map<string, TrLicenseeFromTypes>
 > {
   console.log("getLicenciesMapByEmail");
   
@@ -198,9 +198,9 @@ export async function getLicenciesMapByEmail(token: string): Promise<
     console.log("📂 Chargement des licenciés depuis le fichier local...");
     const data = await fs.readFile(LICENCIES_FILE, "utf-8");
 
-    const licenseeMap = new Map<string, Licensee>();
+    const licenseeMap = new Map<string, TrLicenseeFromTypes>();
 
-    JSON.parse(data).forEach((licencie: TrLicensee) => {
+    JSON.parse(data).forEach((licencie: TrLicenseeFromTypes) => {
       if (licencie.user.length > 0) {
         const user = licencie.user[0];
         if (user.email) { // Vérifier que l'email existe
@@ -235,7 +235,7 @@ export async function getLicenciesMapByEmail(token: string): Promise<
 
 // Fonction pour récupérer tous les licenciés depuis l'API et les enregistrer en cache
 async function fetchAllLicenseesByUserId(token: string): Promise<
-  Map<string, Licensee>
+  Map<string, TrLicenseeFromTypes>
 > {
   const firstClubId = Object.values(COURT_CLUB_IDS)[0];
   const url = `${GET_LICENSEE_URL}/${firstClubId}`;
@@ -252,8 +252,8 @@ async function fetchAllLicenseesByUserId(token: string): Promise<
     return new Map();
   }
 
-  const data = (await response.json()) as TrLicensee[];
-  const licenseeMap = new Map<string, Licensee>();
+  const data = (await response.json()) as TrLicenseeFromTypes[];
+  const licenseeMap = new Map<string, TrLicenseeFromTypes>();
 
   data.forEach((licencie) => {
     if (licencie.user.length > 0) {
@@ -274,7 +274,7 @@ async function fetchAllLicenseesByUserId(token: string): Promise<
 
 // Fonction pour récupérer tous les licenciés depuis l'API avec l'email comme clé
 export async function fetchAllLicenseesByEmail(token: string): Promise<
-  Map<string, Licensee>
+  Map<string, TrLicenseeFromTypes>
 > {
   console.log("fetchAllLicenseesByEmail calling url : ", GET_LICENSEE_URL);
   const firstClubId = Object.values(COURT_CLUB_IDS)[0];
@@ -292,8 +292,8 @@ export async function fetchAllLicenseesByEmail(token: string): Promise<
     return new Map();
   }
 
-  const data = (await response.json()) as TrLicensee[];
-  const licenseeMap = new Map<string, Licensee>();
+  const data = (await response.json()) as TrLicenseeFromTypes[];
+  const licenseeMap = new Map<string, TrLicenseeFromTypes>();
 
   data.forEach((licencie) => {
     if (licencie.user.length > 0) {

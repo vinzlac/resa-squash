@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Licensee } from '@/app/types/licensee';
+import { TrLicensee } from '@/app/types/TrLicencees';
 
 type SortDirection = 'asc' | 'desc';
 type SortField = 'firstName' | 'lastName';
 
 export default function FavoritesPage() {
-  const [licensees, setLicensees] = useState<Licensee[]>([]);
+  const [licensees, setLicensees] = useState<TrLicensee[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

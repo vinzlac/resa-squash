@@ -3,7 +3,7 @@ import { executeQuery } from '@/app/lib/db';
 
 export async function GET() {
   try {
-    console.log('API admin/licenciés appelée');
+    console.log('API admin/licencees appelée');
     
     // Récupérer les licenciés de la base de données
     const dbLicensees = await executeQuery(`

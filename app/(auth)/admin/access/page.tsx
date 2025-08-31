@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Licensee } from '@/app/types/licensee';
+import { TrLicensee } from '@/app/types/TrLicencees';
 import { AuthorizedUsersResponse } from '@/app/types/auth';
 
 type SortDirection = 'asc' | 'desc';
 type SortField = 'firstName' | 'lastName';
 
 export default function AccessPage() {
-  const [licensees, setLicensees] = useState<Licensee[]>([]);
+  const [licensees, setLicensees] = useState<TrLicensee[]>([]);
   const [authorizedUsers, setAuthorizedUsers] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

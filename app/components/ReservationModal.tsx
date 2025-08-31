@@ -1,6 +1,6 @@
 'use client';
 
-import { Licensee } from '@/app/types/licensee';
+import { TrLicensee } from '@/app/types/TrLicencees';
 import { useState, useEffect } from 'react';
 import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 import { toast } from 'react-hot-toast';
@@ -34,7 +34,7 @@ export default function ReservationModal({
   const userStore = useUserStore();
   const connectedUserFullName = userStore.user ? `${userStore.user.firstName} ${userStore.user.lastName}` : '';
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [licensees, setLicensees] = useState<Licensee[]>([]);
+  const [licensees, setLicensees] = useState<TrLicensee[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const [useConnectedUserAsPlayer, setUseConnectedUserAsPlayer] = useState(true);

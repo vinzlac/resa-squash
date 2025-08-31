@@ -1,4 +1,4 @@
-export interface Licensee {
+export interface TrLicensee {
   user: [{
     _id: string;
     firstName: string;
