@@ -1,6 +1,6 @@
 'use client';
 
-import { TrLicensee } from '@/app/types/TrLicencees';
+import { Licensee } from '@/app/types/licensee';
 import { useState, useEffect } from 'react';
 import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 import { toast } from 'react-hot-toast';
@@ -34,7 +34,7 @@ export default function ReservationModal({
   const userStore = useUserStore();
   const connectedUserFullName = userStore.user ? `${userStore.user.firstName} ${userStore.user.lastName}` : '';
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [licensees, setLicensees] = useState<TrLicensee[]>([]);
+  const [licensees, setLicensees] = useState<Licensee[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const [useConnectedUserAsPlayer, setUseConnectedUserAsPlayer] = useState(true);
@@ -75,7 +75,7 @@ export default function ReservationModal({
       try {
         setIsLoading(true);
         const [licenseesResponse, favoritesResponse] = await Promise.all([
-          fetch('/api/teamr/licensees'),
+          fetch('/api/admin/licensees'),
           fetch(`/api/favorites`)
         ]);
 
@@ -112,7 +112,7 @@ export default function ReservationModal({
   }, [isOpen, connectedUserId]);
 
   const getFavoriteLicensees = () => licensees.filter(licensee => 
-    favorites.includes(licensee.user[0]._id)
+    favorites.includes(licensee.userId)
   );
 
   const handleReservation = async () => {
@@ -211,8 +211,8 @@ export default function ReservationModal({
                   >
                     <option value="">Choisir un joueur</option>
                     {getFavoriteLicensees().map(licensee => (
-                      <option key={licensee.user[0]._id} value={licensee.user[0]._id}>
-                        {licensee.user[0].firstName} {licensee.user[0].lastName}
+                      <option key={licensee.userId} value={licensee.userId}>
+                        {licensee.firstName} {licensee.lastName}
                       </option>
                     ))}
                   </select>
@@ -232,16 +232,16 @@ export default function ReservationModal({
                 <option value="">Choisir un partenaire</option>
                 {getFavoriteLicensees().map(licensee => (
                   <option 
-                    key={licensee.user[0]._id} 
-                    value={licensee.user[0]._id}
+                    key={licensee.userId} 
+                    value={licensee.userId}
                     disabled={
-                      (useConnectedUserAsPlayer && licensee.user[0]._id === connectedUserId) || 
-                      (!useConnectedUserAsPlayer && hasPowerUserRights && licensee.user[0]._id === selectedUserId)
+                      (useConnectedUserAsPlayer && licensee.userId === connectedUserId) || 
+                      (!useConnectedUserAsPlayer && hasPowerUserRights && licensee.userId === selectedUserId)
                     }
                   >
-                    {licensee.user[0].firstName} {licensee.user[0].lastName}
-                    {((useConnectedUserAsPlayer && licensee.user[0]._id === connectedUserId) || 
-                      (!useConnectedUserAsPlayer && hasPowerUserRights && licensee.user[0]._id === selectedUserId)) 
+                    {licensee.firstName} {licensee.lastName}
+                    {((useConnectedUserAsPlayer && licensee.userId === connectedUserId) || 
+                      (!useConnectedUserAsPlayer && hasPowerUserRights && licensee.userId === selectedUserId)) 
                       ? ' (déjà sélectionné)' : ''}
                   </option>
                 ))}

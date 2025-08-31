@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { TrLicensee } from '@/app/types/TrLicencees';
+import { Licensee } from '@/app/types/licensee';
 
 type SortDirection = 'asc' | 'desc';
 type SortField = 'firstName' | 'lastName';
 
 export default function FavoritesPage() {
-  const [licensees, setLicensees] = useState<TrLicensee[]>([]);
+  const [licensees, setLicensees] = useState<Licensee[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export default function FavoritesPage() {
     const fetchData = async () => {
       try {
         const [licenseesResponse, favoritesResponse] = await Promise.all([
-          fetch('/api/teamr/licensees'),
+          fetch('/api/admin/licensees'),
           fetch(`/api/favorites`)
         ]);
 
@@ -74,12 +74,12 @@ export default function FavoritesPage() {
   };
 
   const getFilteredLicensees = () => licensees.filter(licensee => 
-    licensee.user[0]?.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    licensee.user[0]?.lastName.toLowerCase().includes(searchTerm.toLowerCase())
+    licensee.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    licensee.lastName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getFavoriteLicensees = () => licensees.filter(licensee => 
-    favorites.includes(licensee.user[0]._id)
+    favorites.includes(licensee.userId)
   );
 
   const handleSort = (field: SortField) => {
@@ -113,14 +113,14 @@ export default function FavoritesPage() {
                 <div className="space-y-2">
                   {getFavoriteLicensees().map(licensee => (
                     <div
-                      key={licensee.user[0]._id}
+                      key={licensee.userId}
                       className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded"
                     >
                       <span className="text-gray-900 dark:text-white">
-                        {licensee.user[0].firstName} {licensee.user[0].lastName}
+                        {licensee.firstName} {licensee.lastName}
                       </span>
                       <button
-                        onClick={() => handleToggleFavorite(licensee.user[0]._id)}
+                        onClick={() => handleToggleFavorite(licensee.userId)}
                         className="p-2 rounded text-red-500 hover:text-red-600"
                       >
                         <svg
@@ -203,35 +203,35 @@ export default function FavoritesPage() {
 
                     {getFilteredLicensees()
                       .sort((a, b) => {
-                        const aValue = a.user[0][sortField].toLowerCase();
-                        const bValue = b.user[0][sortField].toLowerCase();
+                        const aValue = a[sortField].toLowerCase();
+                        const bValue = b[sortField].toLowerCase();
                         return sortDirection === 'asc' 
                           ? aValue.localeCompare(bValue)
                           : bValue.localeCompare(aValue);
                       })
                       .map(licensee => (
                         <div
-                          key={licensee.user[0]._id}
+                          key={licensee.userId}
                           className="grid grid-cols-2 gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded items-center"
                         >
                           <span className="text-gray-900 dark:text-white">
-                            {licensee.user[0].firstName}
+                            {licensee.firstName}
                           </span>
                           <div className="flex items-center justify-between">
                             <span className="text-gray-900 dark:text-white">
-                              {licensee.user[0].lastName}
+                              {licensee.lastName}
                             </span>
                             <button
-                              onClick={() => handleToggleFavorite(licensee.user[0]._id)}
+                              onClick={() => handleToggleFavorite(licensee.userId)}
                               className={`p-2 rounded ${
-                                favorites.includes(licensee.user[0]._id)
+                                favorites.includes(licensee.userId)
                                   ? 'text-yellow-500 hover:text-yellow-600'
                                   : 'text-gray-400 hover:text-gray-500'
                               }`}
                             >
                               <svg
                                 className="w-6 h-6"
-                                fill={favorites.includes(licensee.user[0]._id) ? 'currentColor' : 'none'}
+                                fill={favorites.includes(licensee.userId) ? 'currentColor' : 'none'}
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
                               >
