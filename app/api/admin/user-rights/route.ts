@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserRights, addUserRight, removeUserRight, getAllUserRights, getAuthorizedUsersWithNames } from '@/app/services/rightsService';
 import { UserRight } from '@/app/types/rights';
 import { ApiErrorResponse, ApiSuccessResponse } from '@/app/types/api';
-import { ensureLicenseesMapByEmailIsInitialized, setGlobalTeamrToken } from '@/app/services/common';
+import { setGlobalTeamrToken } from '@/app/services/common';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,8 +15,7 @@ export async function GET(request: NextRequest) {
       setGlobalTeamrToken(teamr_token);
     }
     
-    // Initialiser la map si nécessaire
-    await ensureLicenseesMapByEmailIsInitialized();
+
     
     const url = new URL(request.url);
     const userId = url.searchParams.get('userId');
