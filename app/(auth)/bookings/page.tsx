@@ -5,6 +5,7 @@ import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 import { Booking } from '@/app/types/booking';
 import { Licensee } from '@/app/types/licensee';
 import { getCourtNumberFromClubId } from '@/app/services/config';
+import QRCodeModal from '@/app/components/QRCodeModal';
 
 export default function BookingsPage() {
   // Test hot reload
@@ -13,6 +14,11 @@ export default function BookingsPage() {
   const [licensees, setLicensees] = useState<Licensee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [qrCodeModal, setQrCodeModal] = useState({
+    isOpen: false,
+    loading: false,
+    qrCodeUri: null as string | null
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,9 +78,45 @@ export default function BookingsPage() {
     // TODO: Implémenter la suppression
   };
 
-  const handleQRCode = (bookingId: string) => {
+  const handleQRCode = async (bookingId: string) => {
     console.log('Afficher le QR code pour:', bookingId);
-    // TODO: Implémenter l'affichage du QR code
+    
+    setQrCodeModal({
+      isOpen: true,
+      loading: true,
+      qrCodeUri: null
+    });
+
+    try {
+      const response = await fetch(`/api/bookings/qr-code?bookingId=${bookingId}`);
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération du QR code');
+      }
+
+      const data = await response.json();
+      
+      setQrCodeModal({
+        isOpen: true,
+        loading: false,
+        qrCodeUri: data.qrCodeUri
+      });
+    } catch (error) {
+      console.error('Erreur lors de la récupération du QR code:', error);
+      setQrCodeModal({
+        isOpen: true,
+        loading: false,
+        qrCodeUri: null
+      });
+    }
+  };
+
+  const closeQRCodeModal = () => {
+    setQrCodeModal({
+      isOpen: false,
+      loading: false,
+      qrCodeUri: null
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -231,9 +273,16 @@ export default function BookingsPage() {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+          )             )}
+           </div>
+         )}
+         
+         <QRCodeModal
+           isOpen={qrCodeModal.isOpen}
+           onClose={closeQRCodeModal}
+           qrCodeUri={qrCodeModal.qrCodeUri}
+           loading={qrCodeModal.loading}
+         />
+       </div>
+     );
+   }
