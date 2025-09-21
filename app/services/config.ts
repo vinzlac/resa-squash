@@ -9,6 +9,16 @@ export const COURT_CLUB_IDS: { [key: string]: string } = {
   "3": "60b77145e704970027492488",
   "4": "60b771610ebdd0002094562d"
 };
+
+// Map inversée calculée automatiquement à partir de COURT_CLUB_IDS
+export const CLUB_ID_TO_COURT_NUMBER: { [key: string]: string } = Object.fromEntries(
+  Object.entries(COURT_CLUB_IDS).map(([courtNumber, clubId]) => [clubId, courtNumber])
+);
+
+// Fonction pour obtenir le numéro de court à partir du clubId
+export function getCourtNumberFromClubId(clubId: string): string {
+  return CLUB_ID_TO_COURT_NUMBER[clubId] || "Inconnu";
+}
 export const CUSTOM_ID = "5dd6b3961510c91d353b0833";
 export const COORDINATES = [2.5864862369264747, 48.869659697477495];
 

@@ -69,7 +69,7 @@ export default function LicenseesPage() {
     try {
       setLoading(true);
       console.log('Récupération des licenciés...');
-      const response = await fetch('/api/admin/licensees');
+      const response = await fetch('/api/licensees');
       
       if (!response.ok) {
         const data = await response.json();

@@ -3,15 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 import { Booking } from '@/app/types/booking';
+import { Licensee } from '@/app/types/licensee';
+import { getCourtNumberFromClubId } from '@/app/services/config';
 
 export default function BookingsPage() {
   const user = useConnectedUser();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [licensees, setLicensees] = useState<Licensee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchBookings = async () => {
+    const fetchData = async () => {
       if (!user?.userId) {
         setError('Utilisateur non connecté');
         setLoading(false);
@@ -22,25 +25,45 @@ export default function BookingsPage() {
         setLoading(true);
         setError(null);
         
-        // Récupérer les réservations à partir d'aujourd'hui
-        const fromDate = new Date().toISOString();
-        const response = await fetch(`/api/bookings?userId=${user.userId}&fromDate=${fromDate}`);
+        // Récupérer les licenciés et les réservations en parallèle
+        const [licenseesResponse, bookingsResponse] = await Promise.all([
+          fetch('/api/licensees'),
+          fetch(`/api/bookings?userId=${user.userId}&fromDate=${new Date().toISOString()}`)
+        ]);
         
-        if (!response.ok) {
+        if (!licenseesResponse.ok) {
+          throw new Error('Erreur lors de la récupération des licenciés');
+        }
+        
+        if (!bookingsResponse.ok) {
           throw new Error('Erreur lors de la récupération des réservations');
         }
         
-        const data = await response.json();
-        setBookings(data);
+        const [licenseesData, bookingsData] = await Promise.all([
+          licenseesResponse.json(),
+          bookingsResponse.json()
+        ]);
+        
+        console.log('Licenciés récupérés:', licenseesData.length);
+        console.log('Réservations récupérées:', bookingsData.length);
+        console.log('ClubIds dans les réservations:', bookingsData.map((b: Booking) => b.clubId));
+        
+        setLicensees(licenseesData);
+        
+        // Trier les réservations par date (les plus proches en premier)
+        const sortedBookings = bookingsData.sort((a: Booking, b: Booking) => 
+          new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+        );
+        setBookings(sortedBookings);
       } catch (err) {
-        console.error('Erreur lors du chargement des réservations:', err);
+        console.error('Erreur lors du chargement des données:', err);
         setError(err instanceof Error ? err.message : 'Une erreur est survenue');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBookings();
+    fetchData();
   }, [user?.userId]);
 
   const handleDelete = (bookingId: string) => {
@@ -69,12 +92,17 @@ export default function BookingsPage() {
     }
   };
 
+  const getUserName = (userId: string): string => {
+    const licensee = licensees.find(l => l.userId === userId);
+    if (licensee) {
+      return `${licensee.firstName} ${licensee.lastName}`;
+    }
+    return `ID: ${userId.slice(-8)}`;
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white">
-          Mes réservations
-        </h1>
         <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -85,9 +113,6 @@ export default function BookingsPage() {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white">
-          Mes réservations
-        </h1>
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -111,10 +136,6 @@ export default function BookingsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white">
-        Mes réservations
-      </h1>
-
       {bookings.length === 0 ? (
         <div className="text-center py-12">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -160,21 +181,18 @@ export default function BookingsPage() {
                       </p>
                     </div>
                     
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Club ID
-                      </p>
-                      <p className="text-sm text-gray-900 dark:text-white">
-                        {booking.clubId.slice(-8)}
-                      </p>
-                    </div>
+                       <div>
+                         <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                           Court {getCourtNumberFromClubId(booking.clubId)}
+                         </p>
+                       </div>
                     
                     <div>
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Utilisateur
                       </p>
                       <p className="text-sm text-gray-900 dark:text-white">
-                        {booking.userId.slice(-8)}
+                        {getUserName(booking.userId)}
                       </p>
                     </div>
                     
@@ -183,7 +201,7 @@ export default function BookingsPage() {
                         Partenaire
                       </p>
                       <p className="text-sm text-gray-900 dark:text-white">
-                        {booking.partnerId.slice(-8)}
+                        {getUserName(booking.partnerId)}
                       </p>
                     </div>
                   </div>

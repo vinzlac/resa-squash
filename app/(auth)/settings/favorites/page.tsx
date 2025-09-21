@@ -20,7 +20,7 @@ export default function FavoritesPage() {
     const fetchData = async () => {
       try {
         const [licenseesResponse, favoritesResponse] = await Promise.all([
-          fetch('/api/admin/licensees'),
+          fetch('/api/licensees'),
           fetch(`/api/favorites`)
         ]);
 

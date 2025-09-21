@@ -20,7 +20,7 @@ export default function AccessPage() {
     const fetchData = async () => {
       try {
         const [licenseesResponse, authorizedResponse] = await Promise.all([
-          fetch('/api/admin/licensees'),
+          fetch('/api/licensees'),
           fetch('/api/admin/authorized-users')
         ]);
 

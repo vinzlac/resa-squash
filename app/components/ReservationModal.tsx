@@ -75,7 +75,7 @@ export default function ReservationModal({
       try {
         setIsLoading(true);
         const [licenseesResponse, favoritesResponse] = await Promise.all([
-          fetch('/api/admin/licensees'),
+          fetch('/api/licensees'),
           fetch(`/api/favorites`)
         ]);
 
