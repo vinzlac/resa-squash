@@ -2,6 +2,7 @@
 
 import { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
+import Image from 'next/image';
 
 interface QRCodeModalProps {
   isOpen: boolean;
@@ -54,10 +55,12 @@ export default function QRCodeModal({ isOpen, onClose, qrCodeUri, loading }: QRC
                     </div>
                   ) : qrCodeUri ? (
                     <div className="flex flex-col items-center space-y-4">
-                      <img 
+                      <Image 
                         src={qrCodeUri} 
                         alt="QR Code de la réservation"
-                        className="w-64 h-64 object-contain border border-gray-200 dark:border-gray-600 rounded-lg"
+                        width={256}
+                        height={256}
+                        className="object-contain border border-gray-200 dark:border-gray-600 rounded-lg"
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                         Scannez ce QR code pour accéder aux détails de votre réservation

@@ -42,7 +42,6 @@ function ReservationsContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ sessionId: string; time: string } | null>(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
-  const [qrCodeData, setQrCodeData] = useState<{ sessionId: string; userId: string } | null>(null);
   const [qrCodeUri, setQrCodeUri] = useState<string | null>(null);
   const [qrCodeLoading, setQrCodeLoading] = useState(false);
 
@@ -123,7 +122,6 @@ function ReservationsContent() {
     setIsQRModalOpen(true);
     setQrCodeLoading(true);
     setQrCodeUri(null);
-    setQrCodeData({ sessionId, userId });
 
     try {
       const response = await fetch(`/api/bookings/qr-code?sessionId=${sessionId}&userId=${userId}`);
@@ -393,7 +391,6 @@ function ReservationsContent() {
           isOpen={isQRModalOpen}
           onClose={() => {
             setIsQRModalOpen(false);
-            setQrCodeData(null);
             setQrCodeUri(null);
           }}
           qrCodeUri={qrCodeUri}
