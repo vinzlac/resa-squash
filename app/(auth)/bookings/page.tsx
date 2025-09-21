@@ -6,10 +6,12 @@ import { Booking } from '@/app/types/booking';
 import { Licensee } from '@/app/types/licensee';
 import { getCourtNumberFromClubId } from '@/app/services/config';
 import QRCodeModal from '@/app/components/QRCodeModal';
+import { useUserRights } from '@/app/hooks/useUserRights';
 
 export default function BookingsPage() {
   // Test hot reload
   const user = useConnectedUser();
+  const { isPowerUser } = useUserRights();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [licensees, setLicensees] = useState<Licensee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +20,12 @@ export default function BookingsPage() {
     isOpen: false,
     loading: false,
     qrCodeUri: null as string | null
+  });
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    booking: null as Booking | null,
+    loading: false,
+    error: null as string | null
   });
 
   useEffect(() => {
@@ -73,9 +81,85 @@ export default function BookingsPage() {
     fetchData();
   }, [user?.userId]);
 
-  const handleDelete = (bookingId: string) => {
-    console.log('Supprimer la réservation:', bookingId);
-    // TODO: Implémenter la suppression
+  const handleDelete = (booking: Booking) => {
+    setDeleteModal({
+      isOpen: true,
+      booking: booking,
+      loading: false,
+      error: null
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal.booking) return;
+
+    setDeleteModal(prev => ({ ...prev, loading: true, error: null }));
+
+    try {
+      if (!user?.userId) {
+        throw new Error('Utilisateur non connecté');
+      }
+
+      // Si l'utilisateur n'a pas de droits POWER_USER, utiliser toujours l'utilisateur connecté
+      const userIdToUse = isPowerUser() ? deleteModal.booking.userId : user.userId;
+
+      const response = await fetch(`/api/reservations/${deleteModal.booking.sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: userIdToUse,
+          partnerId: deleteModal.booking.partnerId,
+          startDate: new Date(deleteModal.booking.startDate).toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || 'Erreur lors de la suppression');
+      }
+
+      // Recharger les données après suppression
+      const fetchData = async () => {
+        try {
+          const bookingsResponse = await fetch(`/api/bookings?userId=${user.userId}&fromDate=${new Date().toISOString()}`);
+          if (bookingsResponse.ok) {
+            const bookingsData = await bookingsResponse.json();
+            const sortedBookings = bookingsData.sort((a: Booking, b: Booking) => 
+              new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+            );
+            setBookings(sortedBookings);
+          }
+        } catch (err) {
+          console.error('Erreur lors du rechargement des données:', err);
+        }
+      };
+
+      await fetchData();
+      
+      setDeleteModal({
+        isOpen: false,
+        booking: null,
+        loading: false,
+        error: null
+      });
+    } catch (err) {
+      setDeleteModal(prev => ({
+        ...prev,
+        loading: false,
+        error: err instanceof Error ? err.message : 'Une erreur est survenue'
+      }));
+    }
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({
+      isOpen: false,
+      booking: null,
+      loading: false,
+      error: null
+    });
   };
 
   const handleQRCode = async (bookingId: string) => {
@@ -262,7 +346,7 @@ export default function BookingsPage() {
                   </button>
                   
                   <button
-                    onClick={() => handleDelete(booking.bookingId)}
+                    onClick={() => handleDelete(booking)}
                     className="inline-flex items-center px-3 py-2 border border-red-300 dark:border-red-600 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 dark:text-red-400 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,6 +367,42 @@ export default function BookingsPage() {
            qrCodeUri={qrCodeModal.qrCodeUri}
            loading={qrCodeModal.loading}
          />
+
+         {/* Modal de suppression */}
+         {deleteModal.isOpen && deleteModal.booking && (
+           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+                 Supprimer la réservation
+               </h2>
+               <p className="mb-4 text-gray-700 dark:text-gray-300">
+                 Êtes-vous sûr de vouloir supprimer la réservation du{' '}
+                 <strong>{formatDate(deleteModal.booking.startDate)}</strong> ?
+               </p>
+               {deleteModal.error && (
+                 <div className="mb-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded">
+                   {deleteModal.error}
+                 </div>
+               )}
+               <div className="flex justify-end gap-2">
+                 <button
+                   onClick={closeDeleteModal}
+                   className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                   disabled={deleteModal.loading}
+                 >
+                   Annuler
+                 </button>
+                 <button
+                   onClick={confirmDelete}
+                   className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                   disabled={deleteModal.loading}
+                 >
+                   {deleteModal.loading ? 'Suppression...' : 'Supprimer'}
+                 </button>
+               </div>
+             </div>
+           </div>
+         )}
        </div>
      );
    }
