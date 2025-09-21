@@ -40,11 +40,16 @@ export async function POST(request: NextRequest) {
         ? 60 * 60 * 24 * 30 // 30 jours
         : 60 * 60 * 24;     // 24 heures
 
+      // Détection intelligente pour secure cookies
+      const isSecure = process.env.NODE_ENV === 'production' && 
+                      (request.headers.get('x-forwarded-proto') === 'https' || 
+                       request.url.startsWith('https://'));
+
       responseJson.cookies.set({
         name: COOKIE_NAMES.TEAMR_TOKEN,
         value: data.token,
         httpOnly: true,     // On garde le JWT sécurisé
-        secure: process.env.NODE_ENV === 'production',
+        secure: isSecure,   // Secure seulement en production avec HTTPS
         sameSite: 'lax',
         path: '/',
         maxAge
@@ -54,7 +59,7 @@ export async function POST(request: NextRequest) {
         name: 'teamr_userId',
         value: decodedToken.userId,
         httpOnly: false,    // Accessible côté client
-        secure: process.env.NODE_ENV === 'production',
+        secure: isSecure,   // Secure seulement en production avec HTTPS
         sameSite: 'lax',
         path: '/',
         maxAge
