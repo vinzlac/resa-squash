@@ -11,6 +11,7 @@ interface QRCodeModalProps {
 }
 
 export default function QRCodeModal({ isOpen, onClose, qrCodeUri, loading }: QRCodeModalProps) {
+
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -52,7 +53,7 @@ export default function QRCodeModal({ isOpen, onClose, qrCodeUri, loading }: QRC
                       <p className="text-sm text-gray-600 dark:text-gray-400">Chargement du QR code...</p>
                     </div>
                   ) : qrCodeUri ? (
-                    <div className="flex flex-col items-center space-y-2">
+                    <div className="flex flex-col items-center space-y-4">
                       <img 
                         src={qrCodeUri} 
                         alt="QR Code de la réservation"
@@ -61,6 +62,7 @@ export default function QRCodeModal({ isOpen, onClose, qrCodeUri, loading }: QRC
                       <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                         Scannez ce QR code pour accéder aux détails de votre réservation
                       </p>
+                      
                     </div>
                   ) : (
                     <div className="flex flex-col items-center space-y-2">

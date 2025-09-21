@@ -82,6 +82,8 @@ export async function GET(request: NextRequest) {
 
     const qrCodeData = await response.json();
     console.log('📥 QR code récupéré avec succès');
+    console.log('📥 Structure des données:', Object.keys(qrCodeData));
+    console.log('📥 qrCodeUri preview:', qrCodeData.qrCodeUri ? qrCodeData.qrCodeUri.substring(0, 100) + '...' : 'Pas de qrCodeUri');
     
     return NextResponse.json(qrCodeData);
   } catch (error) {
