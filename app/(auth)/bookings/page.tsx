@@ -7,6 +7,7 @@ import { Licensee } from '@/app/types/licensee';
 import { getCourtNumberFromClubId } from '@/app/services/config';
 
 export default function BookingsPage() {
+  // Test hot reload
   const user = useConnectedUser();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [licensees, setLicensees] = useState<Licensee[]>([]);
