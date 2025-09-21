@@ -206,10 +206,10 @@ function ReservationsContent() {
                 </div>
               </div>
               <div className="flex ml-2">
-                {/* Bouton QR Code - Affiché seulement si l'utilisateur connecté a pris la réservation */}
-                {timeSlot.users[0]?.id === userId && (
+                {/* Bouton QR Code - Affiché si l'utilisateur connecté fait partie de la réservation */}
+                {timeSlot.users.some(user => user.id === userId) && (
                   <button
-                    onClick={() => handleQRCodeClick(timeSlot.sessionId, userId)}
+                    onClick={() => handleQRCodeClick(timeSlot.sessionId, userId || '')}
                     className="mr-2 text-blue-500 hover:text-blue-700"
                     title="Afficher le QR code"
                   >
