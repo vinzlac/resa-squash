@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractTeamrToken } from '@/app/utils/auth';
+import { extractTeamrToken, extractConnectedUserId } from '@/app/utils/auth';
 import { getBookings } from '@/app/services/common';
 import { ErrorCode, ApiError } from '@/app/types/errors';
 
@@ -18,15 +18,18 @@ export async function GET(request: NextRequest) {
 
     // Récupérer les paramètres de la requête
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const userIdParam = searchParams.get('userId');
     const fromDate = searchParams.get('fromDate');
+
+    // Utiliser le userId connecté par défaut si aucun userId n'est fourni
+    const userId = userIdParam || extractConnectedUserId(request);
 
     // Validation des paramètres requis
     if (!userId) {
       return NextResponse.json({
         error: {
           code: ErrorCode.INVALID_PARAMETER,
-          message: 'userId est requis'
+          message: 'userId requis (fourni ou connecté)'
         }
       }, { status: 400 });
     }

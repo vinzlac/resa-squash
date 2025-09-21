@@ -10,6 +10,7 @@ import ReservationModal from '@/app/components/ReservationModal';
 import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 import DeleteReservationModal from '@/app/components/DeleteReservationModal';
 import { useUserRights } from '@/app/hooks/useUserRights';
+import QRCodeModal from '@/app/components/QRCodeModal';
 
 interface ReservationByTimeSlot {
   time: string;
@@ -40,6 +41,10 @@ function ReservationsContent() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ sessionId: string; time: string } | null>(null);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState<{ sessionId: string; userId: string } | null>(null);
+  const [qrCodeUri, setQrCodeUri] = useState<string | null>(null);
+  const [qrCodeLoading, setQrCodeLoading] = useState(false);
 
   // Utiliser useRef pour stocker la date actuelle
   const currentDateRef = useRef(date);
@@ -112,6 +117,35 @@ function ReservationsContent() {
     setIsDeleteModalOpen(true);
   };
 
+  const handleQRCodeClick = async (sessionId: string, userId: string) => {
+    console.log('🔍 Ouverture du QR code pour sessionId:', sessionId, 'userId:', userId);
+    
+    setIsQRModalOpen(true);
+    setQrCodeLoading(true);
+    setQrCodeUri(null);
+    setQrCodeData({ sessionId, userId });
+
+    try {
+      const response = await fetch(`/api/bookings/qr-code?sessionId=${sessionId}&userId=${userId}`);
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération du QR code');
+      }
+
+      const data = await response.json();
+      
+      if (data.qrCodeUri) {
+        setQrCodeUri(data.qrCodeUri);
+      } else {
+        console.error('❌ Pas de qrCodeUri dans la réponse:', data);
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la récupération du QR code:', error);
+    } finally {
+      setQrCodeLoading(false);
+    }
+  };
+
   // Dans le rendu des créneaux, ajoutez l'icône "+" pour les créneaux disponibles
   const renderTimeSlot = (courtId: string, time: string) => {
     const timeSlot = reservationsByCourtNumber[parseInt(courtId)]?.find(
@@ -173,31 +207,47 @@ function ReservationsContent() {
                   <div className="w-3 h-3 left-3 -top-1 absolute transform rotate-45 bg-black"></div>
                 </div>
               </div>
-              {(timeSlot.users[0]?.id === userId || hasPowerUserRights) && (
-                <button
-                  onClick={() => {
-                    // Déterminer le mainUserId (toujours le premier utilisateur)
-                    const mainUserId = timeSlot.users[0]?.id || '';
-                    
-                    // Déterminer le partnerId (toujours le deuxième utilisateur)
-                    const partnerId = timeSlot.users[1]?.id || '';
-                    
-                    handleDeleteClick(
-                      timeSlot.sessionId,
-                      timeSlot.time,
-                      partnerId,
-                      mainUserId
-                    );
-                  }}
-                  className="ml-2 text-red-500 hover:text-red-700"
-                  title={hasPowerUserRights && timeSlot.users[0]?.id !== userId ? 
-                    "Supprimer (droit administrateur)" : "Supprimer"}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              )}
+              <div className="flex ml-2">
+                {/* Bouton QR Code - Affiché seulement si l'utilisateur connecté a pris la réservation */}
+                {timeSlot.users[0]?.id === userId && (
+                  <button
+                    onClick={() => handleQRCodeClick(timeSlot.sessionId, userId)}
+                    className="mr-2 text-blue-500 hover:text-blue-700"
+                    title="Afficher le QR code"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h4M4 8h4m-4 8h4m8-8h4M4 4h4m8 0h4M8 20h4m-4-8h4m8 0h4" />
+                    </svg>
+                  </button>
+                )}
+                
+                {/* Bouton Suppression - Affiché si l'utilisateur a pris la réservation OU s'il a les droits admin */}
+                {(timeSlot.users[0]?.id === userId || hasPowerUserRights) && (
+                  <button
+                    onClick={() => {
+                      // Déterminer le mainUserId (toujours le premier utilisateur)
+                      const mainUserId = timeSlot.users[0]?.id || '';
+                      
+                      // Déterminer le partnerId (toujours le deuxième utilisateur)
+                      const partnerId = timeSlot.users[1]?.id || '';
+                      
+                      handleDeleteClick(
+                        timeSlot.sessionId,
+                        timeSlot.time,
+                        partnerId,
+                        mainUserId
+                      );
+                    }}
+                    className="text-red-500 hover:text-red-700"
+                    title={hasPowerUserRights && timeSlot.users[0]?.id !== userId ? 
+                      "Supprimer (droit administrateur)" : "Supprimer"}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -338,6 +388,17 @@ function ReservationsContent() {
             startDate={new Date(date + 'T' + slotToDelete.time.replace('H', ':') + ':00')}
           />
         )}
+
+        <QRCodeModal
+          isOpen={isQRModalOpen}
+          onClose={() => {
+            setIsQRModalOpen(false);
+            setQrCodeData(null);
+            setQrCodeUri(null);
+          }}
+          qrCodeUri={qrCodeUri}
+          loading={qrCodeLoading}
+        />
       </div>
     </div>
   );
