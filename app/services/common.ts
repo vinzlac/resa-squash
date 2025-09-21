@@ -8,7 +8,7 @@ import {
   COORDINATES,
   TEAMR_AUTH_URL,
 } from "./config";
-import { TrSession, TrBookingResponse, TrTransaction, TrNoCreditsError } from "./teamrTypes";
+import { TrSession, TrBookingResponse, TrTransaction, TrNoCreditsError, TrBooking } from "./teamrTypes";
 
 import { DayPlanning, CourtPlanning, TimeSlot } from "./types.js";
 import { Reservation } from '@/app/types/reservation';
@@ -18,6 +18,7 @@ import { ErrorCode, ApiError } from '@/app/types/errors';
 import { TrLicensee as TrLicenseeFromTypes } from '@/app/types/TrLicencees';
 import { Licensee } from '@/app/types/licensee';
 import { getAllLicensees } from '@/app/lib/db';
+import { Booking } from '@/app/types/booking';
 
 // Variable pour stocker le token
 let globalTeamrToken: string | undefined;
@@ -445,4 +446,68 @@ export async function authenticateUser(email: string, password: string): Promise
   setGlobalTeamrToken(authResponse.token);
   
   return authResponse;
+}
+
+export async function getBookings(
+  userId: string,
+  token: string,
+  fromDate?: string
+): Promise<Booking[]> {
+  try {
+    console.log("getBookings for userId:", userId);
+    
+    // Construire l'URL avec les paramètres
+    const baseUrl = `https://app.teamr.eu/bookings/user/${userId}`;
+    const params = new URLSearchParams({
+      category: '',
+      temporality: 'fromToday'
+    });
+    
+    // Ajouter le paramètre fromDate si fourni
+    if (fromDate) {
+      params.append('fromDate', fromDate);
+    }
+    
+    const url = `${baseUrl}?${params.toString()}`;
+    console.log("📤 getBookings - URL:", url);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: buildTeamRHeader(token),
+    });
+
+    if (!response.ok) {
+      console.error(`❌ Erreur HTTP ${response.status} lors de la récupération des bookings`);
+      throw new Error(`Erreur HTTP ${response.status}`);
+    }
+
+    const bookings: TrBooking[] = await response.json();
+    console.log("📥 getBookings - Réponse reçue:", bookings.length, "bookings");
+
+    // Transformer les données TeamR en format de notre API
+    const transformedBookings: Booking[] = bookings.map((booking) => {
+      const session = booking.session[0]; // Prendre la première session
+      const attendees = session?.attendees || [];
+      
+      // Trouver le userId principal (celui qui correspond au paramètre userId)
+      const mainUser = attendees.find(attendee => attendee.userId === userId);
+      // Trouver le partenaire (l'autre utilisateur)
+      const partner = attendees.find(attendee => attendee.userId !== userId);
+      
+      return {
+        bookingId: booking._id,
+        sessionId: booking.sessionId,
+        userId: mainUser?.userId || userId,
+        partnerId: partner?.userId || booking.friendUserId,
+        startDate: session?.date || '',
+        clubId: booking.clubId
+      };
+    });
+
+    console.log("📤 getBookings - Bookings transformés:", transformedBookings.length);
+    return transformedBookings;
+  } catch (error) {
+    console.error("Erreur lors de la récupération des bookings:", error);
+    throw error;
+  }
 }

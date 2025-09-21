@@ -61,6 +61,18 @@ export default function UserMenu() {
             <Menu.Item>
               {({ active }) => (
                 <button
+                  onClick={() => router.push('/bookings')}
+                  className={`${
+                    active ? 'bg-gray-100 dark:bg-gray-700' : ''
+                  } block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
+                >
+                  Mes réservations
+                </button>
+              )}
+            </Menu.Item>
+            <Menu.Item>
+              {({ active }) => (
+                <button
                   onClick={() => router.push('/settings')}
                   className={`${
                     active ? 'bg-gray-100 dark:bg-gray-700' : ''
