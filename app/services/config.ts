@@ -2,6 +2,8 @@ export const GET_LICENSEE_URL = "https://app.teamr.eu/users/licensees";
 export const BOOKING_URL = 'https://app.teamr.eu/sessions/book/twoLicenseesFromClub';
 export const TEAMR_AUTH_URL = 'https://app.teamr.eu/users/custom/authenticate/v2';
 export const GET_SESSION_URL = "https://app.teamr.eu/nearfilters/clubId";
+export const GET_BOOKINGS_URL = "https://app.teamr.eu/bookings/user/{userId}";
+export const QR_CODE_URL = "https://app.teamr.eu/bookings/qrCode/{bookingId}";
 
 export const COURT_CLUB_IDS: { [key: string]: string } = {
   "1": "60b754170ebdd0002094521b",
@@ -18,6 +20,11 @@ export const CLUB_ID_TO_COURT_NUMBER: { [key: string]: string } = Object.fromEnt
 // Fonction pour obtenir le numéro de court à partir du clubId
 export function getCourtNumberFromClubId(clubId: string): string {
   return CLUB_ID_TO_COURT_NUMBER[clubId] || "Inconnu";
+}
+
+// Fonction utilitaire pour interpoler les variables dans les URLs
+export function interpolateUrl(url: string, variables: Record<string, string>): string {
+  return url.replace(/\{(\w+)\}/g, (match, key) => variables[key] || match);
 }
 export const CUSTOM_ID = "5dd6b3961510c91d353b0833";
 export const COORDINATES = [2.5864862369264747, 48.869659697477495];

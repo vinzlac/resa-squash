@@ -4,9 +4,11 @@ import {
   BOOKING_URL,
   COURT_CLUB_IDS,
   GET_SESSION_URL,
+  GET_BOOKINGS_URL,
   CUSTOM_ID,
   COORDINATES,
   TEAMR_AUTH_URL,
+  interpolateUrl,
 } from "./config";
 import { TrSession, TrBookingResponse, TrTransaction, TrNoCreditsError, TrBooking } from "./teamrTypes";
 
@@ -457,7 +459,7 @@ export async function getBookings(
     console.log("getBookings for userId:", userId);
     
     // Construire l'URL avec les paramètres
-    const baseUrl = `https://app.teamr.eu/bookings/user/${userId}`;
+    const baseUrl = interpolateUrl(GET_BOOKINGS_URL, { userId });
     const params = new URLSearchParams({
       category: '',
       temporality: 'fromToday'

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { extractTeamrToken, extractConnectedUserId } from '@/app/utils/auth';
 import { ErrorCode } from '@/app/types/errors';
 import { getBookings } from '@/app/services/common';
+import { QR_CODE_URL, interpolateUrl } from '@/app/services/config';
 
 export async function GET(request: NextRequest) {
   const token = extractTeamrToken(request);
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Récupérer le QR code avec le bookingId final
-    const qrCodeUrl = `https://app.teamr.eu/bookings/qrCode/${finalBookingId}`;
+    const qrCodeUrl = interpolateUrl(QR_CODE_URL, { bookingId: finalBookingId });
     console.log(`📤 Récupération du QR code pour bookingId: ${finalBookingId}`);
 
     const response = await fetch(qrCodeUrl, {
