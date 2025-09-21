@@ -1,9 +1,13 @@
-export const GET_LICENSEE_URL = "https://app.teamr.eu/users/licensees";
-export const BOOKING_URL = 'https://app.teamr.eu/sessions/book/twoLicenseesFromClub';
-export const TEAMR_AUTH_URL = 'https://app.teamr.eu/users/custom/authenticate/v2';
-export const GET_SESSION_URL = "https://app.teamr.eu/nearfilters/clubId";
-export const GET_BOOKINGS_URL = "https://app.teamr.eu/bookings/user/{userId}";
-export const QR_CODE_URL = "https://app.teamr.eu/bookings/qrCode/{bookingId}";
+// URL de base TeamR
+export const TEAMR_BASE_URL = "https://app.teamr.eu";
+
+// URLs TeamR construites à partir de la base URL
+export const GET_LICENSEE_URL = `${TEAMR_BASE_URL}/users/licensees`;
+export const BOOKING_URL = `${TEAMR_BASE_URL}/sessions/book/twoLicenseesFromClub`;
+export const TEAMR_AUTH_URL = `${TEAMR_BASE_URL}/users/custom/authenticate/v2`;
+export const GET_SESSION_URL = `${TEAMR_BASE_URL}/nearfilters/clubId`;
+export const GET_BOOKINGS_URL = `${TEAMR_BASE_URL}/bookings/user/{userId}`;
+export const QR_CODE_URL = `${TEAMR_BASE_URL}/bookings/qrCode/{bookingId}`;
 
 export const COURT_CLUB_IDS: { [key: string]: string } = {
   "1": "60b754170ebdd0002094521b",
