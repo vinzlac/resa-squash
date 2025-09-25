@@ -87,15 +87,15 @@ export async function removeFavorite(userId: string, licenseeId: string) {
 export async function createReservationIntoDB(
   bookingActionUserId: string,
   sessionId: string,
-  mainUserId: string,
+  userId: string,
   partnerId: string,
   startDate: Date,
   clubId: string
 ) {
   try {
     await executeQuery(
-      "INSERT INTO reservations (booking_action_user_id, session_id, main_user_id, partner_id, start_date, club_id) VALUES ($1, $2, $3, $4, $5, $6)",
-      [bookingActionUserId, sessionId, mainUserId, partnerId, startDate.toISOString(), clubId]
+      "INSERT INTO reservations (booking_action_user_id, session_id, user_id, partner_id, start_date, club_id) VALUES ($1, $2, $3, $4, $5, $6)",
+      [bookingActionUserId, sessionId, userId, partnerId, startDate.toISOString(), clubId]
     );
   } catch (error) {
     console.error(`Error logging reservation creation:`, error);

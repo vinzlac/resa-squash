@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Récupérer toutes les futures réservations où l'utilisateur connecté a fait la réservation
     const now = new Date().toISOString();
     const rows = await executeQuery(`
-      SELECT session_id, main_user_id, partner_id, start_date, club_id, booking_action_user_id
+      SELECT session_id, user_id, partner_id, start_date, club_id, booking_action_user_id
       FROM reservations
       WHERE booking_action_user_id = $1 AND start_date >= $2
       ORDER BY start_date ASC
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     // Transformer les résultats en BookingWithoutId
     const bookings: BookingWithoutId[] = rows.map(row => ({
       sessionId: row.session_id,
-      userId: row.main_user_id, // Utiliser main_user_id au lieu de booking_action_user_id
+      userId: row.user_id, 
       partnerId: row.partner_id,
       startDate: row.start_date,
       clubId: row.club_id,
