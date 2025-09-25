@@ -89,12 +89,13 @@ export async function createReservationIntoDB(
   sessionId: string,
   mainUserId: string,
   partnerId: string,
-  startDate: Date
+  startDate: Date,
+  clubId: string
 ) {
   try {
     await executeQuery(
-      "INSERT INTO reservations (user_id, session_id, main_user_id, partner_id, start_date) VALUES ($1, $2, $3, $4, $5)",
-      [userId, sessionId, mainUserId, partnerId, startDate.toISOString()]
+      "INSERT INTO reservations (user_id, session_id, main_user_id, partner_id, start_date, club_id) VALUES ($1, $2, $3, $4, $5, $6)",
+      [userId, sessionId, mainUserId, partnerId, startDate.toISOString(), clubId]
     );
   } catch (error) {
     console.error(`Error logging reservation creation:`, error);

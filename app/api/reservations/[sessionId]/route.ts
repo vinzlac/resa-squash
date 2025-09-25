@@ -65,7 +65,8 @@ export async function PUT(request: NextRequest) {
         sessionId,
         userId,
         partnerId,
-        new Date(startDate)
+        new Date(startDate),
+        result.session.clubId
       );
     }
     
@@ -207,7 +208,8 @@ export async function POST(request: NextRequest) {
         sessionId,
         userId,
         partnerId,
-        new Date(startDate)
+        new Date(startDate),
+        result.session.clubId
       );
     }
     
