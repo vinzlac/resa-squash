@@ -253,6 +253,9 @@ export default function BookingsPage() {
   };
 
   const getUserName = (userId: string): string => {
+    if (!userId) {
+      return 'Utilisateur inconnu';
+    }
     const licensee = licensees.find(l => l.userId === userId);
     if (licensee) {
       return `${licensee.firstName} ${licensee.lastName}`;
@@ -328,7 +331,7 @@ export default function BookingsPage() {
                             Réservation #{booking.bookingId.slice(-8)}
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Session: {booking.sessionId.slice(-8)}
+                            Session: {booking.sessionId.slice(-8)} • Prise par {getUserName(user?.userId || '')}
                           </p>
                         </div>
                       </div>
@@ -463,7 +466,7 @@ export default function BookingsPage() {
                         Réservation #{booking.sessionId.slice(-8)}
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Session: {booking.sessionId.slice(-8)}
+                        Session: {booking.sessionId.slice(-8)} • Prise par {getUserName(booking.bookingActionUserId)}
                       </p>
                     </div>
                   </div>
