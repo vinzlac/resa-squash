@@ -6,3 +6,11 @@ export interface Booking {
   startDate: string;
   clubId: string;
 }
+
+export interface BookingWithoutId {
+  sessionId: string;
+  userId: string;
+  partnerId: string;
+  startDate: string;
+  clubId: string;
+}

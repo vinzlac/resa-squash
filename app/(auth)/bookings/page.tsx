@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useConnectedUser } from '@/app/hooks/useConnectedUser';
-import { Booking } from '@/app/types/booking';
+import { Booking, BookingWithoutId } from '@/app/types/booking';
 import { Licensee } from '@/app/types/licensee';
 import { getCourtNumberFromClubId } from '@/app/services/config';
 import QRCodeModal from '@/app/components/QRCodeModal';
@@ -14,9 +14,12 @@ export default function BookingsPage() {
   const { isPowerUser } = useUserRights();
   const [activeTab, setActiveTab] = useState<'my-bookings' | 'all-bookings'>('my-bookings');
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookingsWithoutId, setBookingsWithoutId] = useState<BookingWithoutId[]>([]);
   const [licensees, setLicensees] = useState<Licensee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingWithoutId, setLoadingWithoutId] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorWithoutId, setErrorWithoutId] = useState<string | null>(null);
   const [qrCodeModal, setQrCodeModal] = useState({
     isOpen: false,
     loading: false,
@@ -81,6 +84,35 @@ export default function BookingsPage() {
 
     fetchData();
   }, [user?.userId]);
+
+  // Fonction pour charger les bookings sans ID
+  const fetchBookingsWithoutId = async () => {
+    try {
+      setLoadingWithoutId(true);
+      setErrorWithoutId(null);
+      
+      const response = await fetch('/api/bookingWithoutId');
+      
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des réservations');
+      }
+      
+      const data = await response.json();
+      setBookingsWithoutId(data);
+    } catch (err) {
+      console.error('Erreur lors du chargement des réservations sans ID:', err);
+      setErrorWithoutId(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } finally {
+      setLoadingWithoutId(false);
+    }
+  };
+
+  // Charger les bookings sans ID quand on passe sur l'onglet "all-bookings"
+  useEffect(() => {
+    if (activeTab === 'all-bookings' && bookingsWithoutId.length === 0 && !loadingWithoutId) {
+      fetchBookingsWithoutId();
+    }
+  }, [activeTab, bookingsWithoutId.length, loadingWithoutId]);
 
   const handleDelete = (booking: Booking) => {
     setDeleteModal({
@@ -366,18 +398,114 @@ export default function BookingsPage() {
         </>
       );
     } else {
-      // Onglet "Mes réservations quelque soit le nom" - vide pour le moment
+      // Onglet "Mes réservations quelque soit le nom"
+      if (loadingWithoutId) {
+        return (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        );
+      }
+
+      if (errorWithoutId) {
+        return (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Erreur
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  {errorWithoutId}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (bookingsWithoutId.length === 0) {
+        return (
+          <div className="text-center py-12">
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+              Aucune réservation
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Vous n&apos;avez pas fait de réservations pour d&apos;autres joueurs.
+            </p>
+          </div>
+        );
+      }
+
       return (
-        <div className="text-center py-12">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-            Contenu à venir
-          </h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Cette section sera bientôt disponible.
-          </p>
+        <div className="space-y-4">
+          {bookingsWithoutId.map((booking, index) => (
+            <div
+              key={`${booking.sessionId}-${index}`}
+              className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700 p-6"
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        Réservation #{booking.sessionId.slice(-8)}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Session: {booking.sessionId.slice(-8)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Date et heure
+                      </p>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {formatDate(booking.startDate)}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Court {getCourtNumberFromClubId(booking.clubId)}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Utilisateur
+                      </p>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {getUserName(booking.userId)}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Partenaire
+                      </p>
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {getUserName(booking.partnerId)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       );
     }
