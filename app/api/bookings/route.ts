@@ -59,9 +59,15 @@ export async function GET(request: NextRequest) {
     // Appeler la fonction getBookings
     const bookings = await getBookings(userId, token, fromDate || undefined);
 
-    console.log('📤 GET /api/bookings - Réponse:', bookings.length, 'bookings');
+    // Ajouter le champ bookingActionUserId (même valeur que userId pour les bookings TeamR)
+    const bookingsWithActionUserId = bookings.map(booking => ({
+      ...booking,
+      bookingActionUserId: booking.userId
+    }));
 
-    return NextResponse.json(bookings);
+    console.log('📤 GET /api/bookings - Réponse:', bookingsWithActionUserId.length, 'bookings');
+
+    return NextResponse.json(bookingsWithActionUserId);
 
   } catch (error) {
     console.error('Erreur dans GET /api/bookings:', error);

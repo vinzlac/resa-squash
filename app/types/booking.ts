@@ -5,6 +5,7 @@ export interface Booking {
   partnerId: string;
   startDate: string;
   clubId: string;
+  bookingActionUserId: string;
 }
 
 export interface BookingWithoutId {
@@ -15,4 +16,15 @@ export interface BookingWithoutId {
   clubId: string;
   bookingActionUserId: string;
   createdAt: string;
+}
+
+export interface MergeBooking {
+  bookingId?: string; // Optionnel car peut venir de Booking
+  sessionId: string;
+  userId: string;
+  partnerId: string;
+  startDate: string;
+  clubId: string;
+  bookingActionUserId: string;
+  createdAt?: string; // Optionnel car peut venir de BookingWithoutId
 }
