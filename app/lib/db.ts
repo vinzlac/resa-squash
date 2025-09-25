@@ -85,7 +85,7 @@ export async function removeFavorite(userId: string, licenseeId: string) {
 
 // Fonction pour enregistrer une création de réservation
 export async function createReservationIntoDB(
-  userId: string,
+  bookingActionUserId: string,
   sessionId: string,
   mainUserId: string,
   partnerId: string,
@@ -94,8 +94,8 @@ export async function createReservationIntoDB(
 ) {
   try {
     await executeQuery(
-      "INSERT INTO reservations (user_id, session_id, main_user_id, partner_id, start_date, club_id) VALUES ($1, $2, $3, $4, $5, $6)",
-      [userId, sessionId, mainUserId, partnerId, startDate.toISOString(), clubId]
+      "INSERT INTO reservations (booking_action_user_id, session_id, main_user_id, partner_id, start_date, club_id) VALUES ($1, $2, $3, $4, $5, $6)",
+      [bookingActionUserId, sessionId, mainUserId, partnerId, startDate.toISOString(), clubId]
     );
   } catch (error) {
     console.error(`Error logging reservation creation:`, error);
