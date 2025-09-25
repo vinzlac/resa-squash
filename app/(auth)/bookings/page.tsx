@@ -252,6 +252,26 @@ export default function BookingsPage() {
     }
   };
 
+  const formatCreatedAt = (dateString: string) => {
+    try {
+      if (!dateString) {
+        return 'Date inconnue';
+      }
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Date invalide';
+      }
+      return date.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Date invalide';
+    }
+  };
+
   const getUserName = (userId: string): string => {
     if (!userId) {
       return 'Utilisateur inconnu';
@@ -466,7 +486,7 @@ export default function BookingsPage() {
                         Réservation #{booking.sessionId.slice(-8)}
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Session: {booking.sessionId.slice(-8)} • Prise par {getUserName(booking.bookingActionUserId)}
+                        Session: {booking.sessionId.slice(-8)} • Prise par {getUserName(booking.bookingActionUserId)} le {formatCreatedAt(booking.createdAt)}
                       </p>
                     </div>
                   </div>

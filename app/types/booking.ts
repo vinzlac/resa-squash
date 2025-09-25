@@ -14,4 +14,5 @@ export interface BookingWithoutId {
   startDate: string;
   clubId: string;
   bookingActionUserId: string;
+  createdAt: string;
 }
