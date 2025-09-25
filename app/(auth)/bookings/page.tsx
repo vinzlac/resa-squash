@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useConnectedUser } from '@/app/hooks/useConnectedUser';
-import { Booking, BookingWithoutId, MergeBooking } from '@/app/types/booking';
+import { Booking, MergeBooking } from '@/app/types/booking';
 import { Licensee } from '@/app/types/licensee';
 import { getCourtNumberFromClubId } from '@/app/services/config';
 import QRCodeModal from '@/app/components/QRCodeModal';

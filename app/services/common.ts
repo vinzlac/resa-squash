@@ -502,7 +502,8 @@ export async function getBookings(
         userId: mainUser?.userId || userId,
         partnerId: partner?.userId || booking.friendUserId,
         startDate: session?.date || '',
-        clubId: booking.clubId
+        clubId: booking.clubId,
+        bookingActionUserId: userId // L'utilisateur connecté est celui qui a fait la réservation
       };
     });
 

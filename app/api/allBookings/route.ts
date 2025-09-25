@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractTeamrToken, extractConnectedUserId } from '@/app/utils/auth';
-import { MergeBooking } from '@/app/types/booking';
+import { MergeBooking, BookingWithoutId } from '@/app/types/booking';
 import { getBookings } from '@/app/services/common';
 
 export async function GET(request: NextRequest) {
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    let localBookings: any[] = [];
+    let localBookings: BookingWithoutId[] = [];
     if (response.ok) {
       localBookings = await response.json();
     }
