@@ -11,11 +11,24 @@ import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 import DeleteReservationModal from '@/app/components/DeleteReservationModal';
 import { useUserRights } from '@/app/hooks/useUserRights';
 import QRCodeModal from '@/app/components/QRCodeModal';
+import SelectedBookingModal from '@/app/components/SelectedBookingModal';
 
 interface ReservationByTimeSlot {
   time: string;
   users: User[];
   sessionId: string;
+}
+
+interface SelectedBooking {
+  sessionId: string;
+  time: string;
+  court: number;
+  date: string;
+  users: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+  }>;
 }
 
 function ReservationsContent() {
@@ -44,6 +57,8 @@ function ReservationsContent() {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [qrCodeUri, setQrCodeUri] = useState<string | null>(null);
   const [qrCodeLoading, setQrCodeLoading] = useState(false);
+  const [selectedBookings, setSelectedBookings] = useState<SelectedBooking[]>([]);
+  const [isSelectedBookingModalOpen, setIsSelectedBookingModalOpen] = useState(false);
 
   // Utiliser useRef pour stocker la date actuelle
   const currentDateRef = useRef(date);
@@ -144,11 +159,39 @@ function ReservationsContent() {
     }
   };
 
+  const handleBookingSelect = (sessionId: string, time: string, court: number, users: User[]) => {
+    const isSelected = selectedBookings.some(booking => booking.sessionId === sessionId);
+    
+    if (isSelected) {
+      // Désélectionner
+      setSelectedBookings(prev => prev.filter(booking => booking.sessionId !== sessionId));
+    } else {
+      // Sélectionner
+      const newBooking: SelectedBooking = {
+        sessionId,
+        time,
+        court,
+        date: currentDateRef.current,
+        users: users.map(user => ({
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName
+        }))
+      };
+      setSelectedBookings(prev => [...prev, newBooking]);
+    }
+  };
+
+  const handleRemoveBooking = (sessionId: string) => {
+    setSelectedBookings(prev => prev.filter(booking => booking.sessionId !== sessionId));
+  };
+
   // Dans le rendu des créneaux, ajoutez l'icône "+" pour les créneaux disponibles
   const renderTimeSlot = (courtId: string, time: string) => {
     const timeSlot = reservationsByCourtNumber[parseInt(courtId)]?.find(
       slot => slot.time === time
     );
+    const isSelected = selectedBookings.some(booking => booking.sessionId === timeSlot?.sessionId);
     
     if (isDatePassed) {
       return (
@@ -163,7 +206,7 @@ function ReservationsContent() {
     if (timeSlot) {
       console.log('timeSlot:', timeSlot);
       return (
-        <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded">
+        <div className={`p-2 rounded ${isSelected ? 'bg-yellow-100 dark:bg-yellow-900 border-2 border-yellow-500' : 'bg-blue-100 dark:bg-blue-900'}`}>
           {timeSlot.users.length === 0 ? (
             <div className="flex justify-between items-center">
               <div className="group relative">
@@ -190,7 +233,7 @@ function ReservationsContent() {
             </div>
           ) : (
             <div className="flex justify-between items-center">
-              <div className="group relative">
+              <div className="group relative flex-1">
                 <span className="text-gray-900 dark:text-white cursor-help">
                   {timeSlot.users.map(user => `${user.firstName} ${user.lastName}`).join(', ')}
                 </span>
@@ -205,7 +248,28 @@ function ReservationsContent() {
                   <div className="w-3 h-3 left-3 -top-1 absolute transform rotate-45 bg-black"></div>
                 </div>
               </div>
-              <div className="flex ml-2">
+              <div className="flex ml-2 items-center">
+                {/* Bouton de sélection */}
+                <button
+                  onClick={() => handleBookingSelect(timeSlot.sessionId, timeSlot.time, parseInt(courtId), timeSlot.users)}
+                  className={`mr-2 w-6 h-6 flex items-center justify-center rounded ${
+                    isSelected 
+                      ? 'bg-yellow-500 text-white' 
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                  }`}
+                  title={isSelected ? "Désélectionner" : "Sélectionner"}
+                >
+                  {isSelected ? (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  )}
+                </button>
+
                 {/* Bouton QR Code - Affiché si l'utilisateur connecté fait partie de la réservation */}
                 {timeSlot.users.some(user => user.id === userId) && (
                   <button
@@ -310,6 +374,26 @@ function ReservationsContent() {
           </div>
         </div>
 
+        {/* Bouton Recopie */}
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={() => setIsSelectedBookingModalOpen(true)}
+            disabled={selectedBookings.length === 0}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              selectedBookings.length === 0
+                ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
+          >
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>Recopie ({selectedBookings.length})</span>
+            </div>
+          </button>
+        </div>
+
         {loading ? (
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -395,6 +479,20 @@ function ReservationsContent() {
           }}
           qrCodeUri={qrCodeUri}
           loading={qrCodeLoading}
+        />
+
+        <SelectedBookingModal
+          isOpen={isSelectedBookingModalOpen}
+          onClose={() => setIsSelectedBookingModalOpen(false)}
+          selectedBookings={selectedBookings}
+          onRemoveBooking={handleRemoveBooking}
+          currentDate={date}
+          onRecopySuccess={() => {
+            // Rafraîchir les réservations après la recopie
+            fetchReservations();
+            // Vider la sélection
+            setSelectedBookings([]);
+          }}
         />
       </div>
     </div>

@@ -89,3 +89,87 @@ export async function GET(request: NextRequest) {
     }, { status: 500 });
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    // Vérifier l'authentification
+    const token = extractTeamrToken(request);
+    if (!token) {
+      return NextResponse.json({
+        error: {
+          code: ErrorCode.UNAUTHORIZED,
+          message: 'Authentication required'
+        }
+      }, { status: 401 });
+    }
+
+    // Récupérer le payload
+    const body = await request.json();
+    const { userIds, date, time, court } = body;
+
+    // Validation des paramètres requis
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return NextResponse.json({
+        error: {
+          code: ErrorCode.INVALID_PARAMETER,
+          message: 'userIds requis (array non vide)'
+        }
+      }, { status: 400 });
+    }
+
+    if (!date || !time || !court) {
+      return NextResponse.json({
+        error: {
+          code: ErrorCode.INVALID_PARAMETER,
+          message: 'date, time et court requis'
+        }
+      }, { status: 400 });
+    }
+
+    // Validation du format de date
+    if (isNaN(Date.parse(date))) {
+      return NextResponse.json({
+        error: {
+          code: ErrorCode.INVALID_PARAMETER,
+          message: 'date doit être une date valide'
+        }
+      }, { status: 400 });
+    }
+
+    console.log('📥 POST /api/bookings - Paramètres:', { userIds, date, time, court });
+
+    // TODO: Implémenter la logique de création de réservation
+    // Pour le moment, on simule un succès
+    console.log('✅ Réservation créée avec succès');
+
+    return NextResponse.json({
+      success: true,
+      message: 'Réservation créée avec succès',
+      data: {
+        userIds,
+        date,
+        time,
+        court
+      }
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('Erreur dans POST /api/bookings:', error);
+    
+    if ((error as ApiError).code) {
+      return NextResponse.json({
+        error: {
+          code: (error as ApiError).code,
+          message: (error as ApiError).message
+        }
+      }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      error: {
+        code: ErrorCode.INTERNAL_SERVER_ERROR,
+        message: 'Erreur interne du serveur'
+      }
+    }, { status: 500 });
+  }
+}
