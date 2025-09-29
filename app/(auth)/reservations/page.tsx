@@ -21,7 +21,8 @@ interface ReservationByTimeSlot {
 
 interface SelectedBooking {
   sessionId: string;
-  time: string;
+  beginTime: string;
+  endTime: string;
   court: number;
   date: string;
   users: Array<{
@@ -159,7 +160,7 @@ function ReservationsContent() {
     }
   };
 
-  const handleBookingSelect = (sessionId: string, time: string, court: number, users: User[]) => {
+  const handleBookingSelect = (sessionId: string, time: string, endTime: string, court: number, users: User[]) => {
     const isSelected = selectedBookings.some(booking => booking.sessionId === sessionId);
     
     if (isSelected) {
@@ -169,7 +170,8 @@ function ReservationsContent() {
       // Sélectionner
       const newBooking: SelectedBooking = {
         sessionId,
-        time,
+        beginTime: time,
+        endTime: endTime,
         court,
         date: currentDateRef.current,
         users: users.map(user => ({
@@ -251,7 +253,17 @@ function ReservationsContent() {
               <div className="flex ml-2 items-center">
                 {/* Bouton de sélection */}
                 <button
-                  onClick={() => handleBookingSelect(timeSlot.sessionId, timeSlot.time, parseInt(courtId), timeSlot.users)}
+                  onClick={() => {
+                    // Trouver la réservation complète pour récupérer endTime
+                    const fullReservation = reservations.find(r => r.id.toString() === timeSlot.sessionId);
+                    handleBookingSelect(
+                      timeSlot.sessionId, 
+                      timeSlot.time, 
+                      fullReservation?.endTime || timeSlot.time, 
+                      parseInt(courtId), 
+                      timeSlot.users
+                    );
+                  }}
                   className={`mr-2 w-6 h-6 flex items-center justify-center rounded ${
                     isSelected 
                       ? 'bg-yellow-500 text-white' 

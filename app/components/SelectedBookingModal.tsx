@@ -7,7 +7,8 @@ import { fr } from 'date-fns/locale';
 
 interface SelectedBooking {
   sessionId: string;
-  time: string;
+  beginTime: string;
+  endTime: string;
   court: number;
   date: string;
   users: Array<{
@@ -65,13 +66,14 @@ export default function SelectedBookingModal({
           body: JSON.stringify({
             userIds: booking.users.map(user => user.id),
             date: currentDate,
-            time: booking.time,
+            beginTime: booking.beginTime,
+            endTime: booking.endTime,
             court: booking.court
           }),
         });
 
         if (!response.ok) {
-          throw new Error(`Erreur lors de la recopie du créneau ${booking.time} sur le terrain ${booking.court}`);
+          throw new Error(`Erreur lors de la recopie du créneau ${booking.beginTime}-${booking.endTime} sur le terrain ${booking.court}`);
         }
 
         // Mettre à jour le progrès
@@ -180,7 +182,7 @@ export default function SelectedBookingModal({
                         {format(new Date(booking.date), "EEEE d MMMM yyyy", { locale: fr })}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-300">
-                        {booking.time}
+                        {booking.beginTime} - {booking.endTime}
                       </div>
                     </div>
                     <div className="mt-1 text-sm text-gray-600 dark:text-gray-300">
