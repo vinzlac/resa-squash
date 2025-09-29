@@ -232,10 +232,22 @@ export async function POST(request: NextRequest) {
       const { createReservationIntoDB } = await import('@/app/lib/db');
       const { extractConnectedUserId } = await import('@/app/utils/auth');
       
+      // Construire la date correctement avec le timezone local
+      const startDate = new Date(`${date}T${beginTime.replace('H', ':')}:00`);
+      
+      console.log('📅 Construction de la date:', {
+        date,
+        beginTime,
+        startDateString: `${date}T${beginTime.replace('H', ':')}:00`,
+        startDate: startDate.toISOString(),
+        startDateLocal: startDate.toString(),
+        timezoneOffset: startDate.getTimezoneOffset()
+      });
+      
       const bookingData = {
         userId: userIds[0],
         partnerId: userIds[1] || userIds[0], // Si un seul utilisateur, utiliser le même ID
-        startDate: new Date(date).toISOString()
+        startDate: startDate.toISOString()
       };
 
       // Appel direct au service bookSession

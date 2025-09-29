@@ -119,6 +119,8 @@ export async function fetchSessionsForCourt(
     coordinates: COORDINATES,
     customId: CUSTOM_ID,
   };
+  console.log("📤 fetchSessionsForCourt - Méthode: POST");
+  console.log("📤 fetchSessionsForCourt - URL:", GET_SESSION_URL);
   console.log("📤 fetchSessionsForCourt - Payload envoyé:", JSON.stringify(payload, null, 2));
   
   const response = await fetch(GET_SESSION_URL, {
@@ -238,6 +240,9 @@ export async function bookSession(
       customId: CUSTOM_ID,
     };
 
+    console.log("📤 bookSession - Méthode: POST");
+    console.log("📤 bookSession - URL:", BOOKING_URL);
+    console.log("📤 bookSession - Headers:", buildTeamRHeader(token));
     console.log("📤 bookSession - Payload envoyé:", JSON.stringify(payload, null, 2));
     const body = JSON.stringify(payload);
 
@@ -247,7 +252,14 @@ export async function bookSession(
       body: body,
     });
 
+    console.log("📥 bookSession - Réponse HTTP:", {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
     const responseText = await response.text();
+    console.log("📥 bookSession - Réponse brute:", responseText);
     
     // Vérifier si la réponse contient "already booked"
     if (responseText.includes("already booked")) {
@@ -271,11 +283,14 @@ export async function bookSession(
       throw new Error(`Erreur HTTP : ${response.status}`);
     }
 
-    return responseText ? JSON.parse(responseText) : { 
+    const parsedResponse = responseText ? JSON.parse(responseText) : { 
       session: {} as TrSession, 
       transaction: {} as TrTransaction, 
       friendTransaction: {} as TrTransaction 
     } as TrBookingResponse;
+    
+    console.log("📥 bookSession - Réponse parsée:", JSON.stringify(parsedResponse, null, 2));
+    return parsedResponse;
   } catch (error) {
     console.error("Erreur lors de la réservation :", error);
     throw error;
@@ -307,6 +322,8 @@ export async function deleteBookSession(
       customId: CUSTOM_ID,
     };
 
+    console.log("📤 deleteBookSession - Méthode: POST");
+    console.log("📤 deleteBookSession - URL:", BOOKING_URL);
     console.log("📤 deleteBookSession - Payload envoyé:", JSON.stringify(payload, null, 2));
     const body = JSON.stringify(payload);
 
@@ -471,6 +488,7 @@ export async function getBookings(
     }
     
     const url = `${baseUrl}?${params.toString()}`;
+    console.log("📤 getBookings - Méthode: GET");
     console.log("📤 getBookings - URL:", url);
 
     const response = await fetch(url, {
