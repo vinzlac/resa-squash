@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { Reservation, User } from '@/app/types/reservation';
+import { BookingWithoutId } from '@/app/types/booking';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { format, addDays, subDays, isBefore, startOfDay } from 'date-fns';
@@ -38,6 +39,7 @@ function ReservationsContent() {
   const { isPowerUser } = useUserRights();
   const hasPowerUserRights = isPowerUser();
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [userBookings, setUserBookings] = useState<BookingWithoutId[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams() || new URLSearchParams();
@@ -84,11 +86,32 @@ function ReservationsContent() {
     }
   }, []); // Plus de dépendance à date
 
+  // Récupérer les réservations de l'utilisateur connecté
+  const fetchUserBookings = useCallback(async () => {
+    if (!userId) return;
+    
+    try {
+      const response = await fetch('/api/bookingWithoutId');
+      if (response.ok) {
+        const bookings = await response.json();
+        setUserBookings(bookings);
+        console.log('📋 User bookings récupérés:', bookings.length);
+      }
+    } catch (err) {
+      console.error('Erreur lors de la récupération des réservations utilisateur:', err);
+    }
+  }, [userId]);
+
   // Mettre à jour la ref et déclencher le fetch quand la date change
   useEffect(() => {
     currentDateRef.current = date;
     fetchReservations();
   }, [date, fetchReservations]);
+
+  // Récupérer les réservations utilisateur au chargement
+  useEffect(() => {
+    fetchUserBookings();
+  }, [fetchUserBookings]);
 
   // Regrouper les réservations par terrain
   const reservationsByCourtNumber: { [courtNumber: number]: ReservationByTimeSlot[] } = {};
@@ -188,6 +211,33 @@ function ReservationsContent() {
     setSelectedBookings(prev => prev.filter(booking => booking.sessionId !== sessionId));
   };
 
+  // Fonction pour vérifier si un créneau a été pris par l'utilisateur connecté
+  const isBookedByCurrentUser = (sessionId: string, time: string) => {
+    if (!userId) {
+      console.log('❌ Pas d\'userId connecté');
+      return false;
+    }
+    
+    // Construire la date/heure de début pour la comparaison
+    const startDateTime = new Date(`${date}T${time.replace('H', ':')}:00`);
+    
+    const result = userBookings.some(booking => {
+      // Vérifier que c'est bien l'utilisateur connecté qui a fait la réservation
+      const isBookingActionUser = booking.bookingActionUserId === userId;
+      
+      // Vérifier que la date/heure correspond
+      const bookingStartDate = new Date(booking.startDate);
+      const isSameDateTime = bookingStartDate.getTime() === startDateTime.getTime();
+      
+      // Vérifier que le sessionId correspond (IMPORTANT !)
+      const isSameSessionId = booking.sessionId === sessionId;
+      
+      return isBookingActionUser && isSameDateTime && isSameSessionId;
+    });
+    
+    return result;
+  };
+
   // Dans le rendu des créneaux, ajoutez l'icône "+" pour les créneaux disponibles
   const renderTimeSlot = (courtId: string, time: string) => {
     const timeSlot = reservationsByCourtNumber[parseInt(courtId)]?.find(
@@ -195,11 +245,17 @@ function ReservationsContent() {
     );
     const isSelected = selectedBookings.some(booking => booking.sessionId === timeSlot?.sessionId);
     
+    // Vérifier si le créneau a été pris par l'utilisateur connecté
+    const isBookedByUser = timeSlot ? isBookedByCurrentUser(timeSlot.sessionId, time) : false;
+    const isParticipant = timeSlot?.users.some(user => user.id === userId);
+    const isMyBooking = isBookedByUser || isParticipant;
+    
     if (isDatePassed) {
       return (
-        <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded">
-          <span className="text-gray-500 dark:text-gray-400">
+        <div className={`p-2 rounded ${isMyBooking ? 'bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
+          <span className={`${isMyBooking ? 'text-green-800 dark:text-green-200 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
             {timeSlot?.users.length ? timeSlot.users.map(user => `${user.firstName} ${user.lastName}`).join(', ') : 'Personne'}
+            {isMyBooking && ' (Votre réservation)'}
           </span>
         </div>
       );
@@ -208,7 +264,13 @@ function ReservationsContent() {
     if (timeSlot) {
       console.log('timeSlot:', timeSlot);
       return (
-        <div className={`p-2 rounded ${isSelected ? 'bg-yellow-100 dark:bg-yellow-900 border-2 border-yellow-500' : 'bg-blue-100 dark:bg-blue-900'}`}>
+        <div className={`p-2 rounded ${
+          isSelected 
+            ? 'bg-yellow-100 dark:bg-yellow-900 border-2 border-yellow-500' 
+            : isMyBooking 
+              ? 'bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700' 
+              : 'bg-blue-100 dark:bg-blue-900'
+        }`}>
           {timeSlot.users.length === 0 ? (
             <div className="flex justify-between items-center">
               <div className="group relative">
@@ -236,8 +298,18 @@ function ReservationsContent() {
           ) : (
             <div className="flex justify-between items-center">
               <div className="group relative flex-1">
-                <span className="text-gray-900 dark:text-white cursor-help">
-                  {timeSlot.users.map(user => `${user.firstName} ${user.lastName}`).join(', ')}
+                <span className={`cursor-help ${isMyBooking ? 'text-green-800 dark:text-green-200 font-medium' : 'text-gray-900 dark:text-white'}`}>
+                  {timeSlot.users.map(user => {
+                    const isCurrentUser = user.id === userId;
+                    return (
+                      <span key={user.id} className={isCurrentUser ? 'font-bold' : ''}>
+                        {user.firstName} {user.lastName}
+                        {isCurrentUser && ' (Vous)'}
+                      </span>
+                    );
+                  }).reduce((acc, curr, index) => {
+                    return index === 0 ? [curr] : [...acc, ', ', curr];
+                  }, [] as React.ReactNode[])}
                 </span>
                 <div className="absolute left-0 top-0 mt-6 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
                   <div className="bg-black text-white text-xs rounded py-1 px-2 whitespace-pre">
