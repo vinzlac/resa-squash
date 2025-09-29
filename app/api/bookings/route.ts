@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { extractTeamrToken, extractConnectedUserId } from '@/app/utils/auth';
 import { getBookings } from '@/app/services/common';
 import { ErrorCode, ApiError } from '@/app/types/errors';
+import { Reservation, User } from '@/app/types/reservation';
 
 export async function GET(request: NextRequest) {
   try {
@@ -157,7 +158,7 @@ export async function POST(request: NextRequest) {
       });
       
       // Filtrer par plage horaire - logique simplifiée
-      const filteredReservations = reservations.filter((reservation: any) => {
+      const filteredReservations = reservations.filter((reservation: Reservation) => {
         // Vérifier si le créneau correspond exactement à la plage demandée
         return reservation.time === beginTime && reservation.endTime === endTime;
       });
@@ -170,7 +171,7 @@ export async function POST(request: NextRequest) {
         filteredReservations.forEach((reservation, index) => {
           console.log(`  ${index + 1}. Court ${reservation.court}: ${reservation.time}-${reservation.endTime} (disponible: ${reservation.available})`);
           if (!reservation.available && reservation.users && reservation.users.length > 0) {
-            console.log(`     👥 Participants: ${reservation.users.map((u: any) => `${u.firstName} ${u.lastName}`).join(', ')}`);
+            console.log(`     👥 Participants: ${reservation.users.map((u: User) => `${u.firstName} ${u.lastName}`).join(', ')}`);
           }
         });
       } else {
@@ -186,16 +187,16 @@ export async function POST(request: NextRequest) {
           courtsMap.get(res.court).push(res);
         });
         
-        courtsMap.forEach((courtReservations, courtNumber) => {
+        courtsMap.forEach((courtReservations: Reservation[], courtNumber) => {
           console.log(`  🏟️  Court ${courtNumber}:`);
-          courtReservations.forEach((res: any) => {
+          courtReservations.forEach((res: Reservation) => {
             console.log(`     ${res.time}-${res.endTime} (disponible: ${res.available})`);
           });
         });
       }
 
       // 2. Trouver une session disponible pour le court spécifié
-      let availableSession = filteredReservations.find((reservation: any) => 
+      let availableSession = filteredReservations.find((reservation: Reservation) => 
         reservation.court === court && 
         reservation.available === true
       );
@@ -203,7 +204,7 @@ export async function POST(request: NextRequest) {
       // Si pas trouvé avec le filtrage exact, chercher dans toutes les réservations
       if (!availableSession) {
         console.log('🔍 Recherche dans toutes les réservations...');
-        availableSession = reservations.find((reservation: any) => 
+        availableSession = reservations.find((reservation: Reservation) => 
           reservation.court === court && 
           reservation.available === true &&
           reservation.time === beginTime &&
