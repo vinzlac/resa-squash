@@ -1,0 +1,31 @@
+---
+alwaysApply: true
+---
+
+# Project Structure Guide
+
+## Architecture Next.js 14
+- **App Router** : Utilise le nouveau système de routage basé sur les dossiers
+- **Pages principales** : [app/(auth)/reservations/page.tsx](mdc:app/(auth)/reservations/page.tsx) et [app/(auth)/reservation/page.tsx](mdc:app/(auth)/reservation/page.tsx)
+- **API Routes** : [app/api/bookings/route.ts](mdc:app/api/bookings/route.ts) pour les réservations
+- **Composants** : [app/components/](mdc:app/components/) pour les modales et composants réutilisables
+
+## Structure des dossiers
+- `app/(auth)/` : Pages protégées nécessitant une authentification
+- `app/(public)/` : Pages publiques (login, unauthorized)
+- `app/api/` : Routes API Next.js
+- `app/components/` : Composants React réutilisables
+- `app/hooks/` : Hooks personnalisés
+- `app/services/` : Services métier et intégrations
+- `app/types/` : Définitions TypeScript
+- `migrations/` : Scripts de migration de base de données
+
+## Authentification
+- **NextAuth.js** : Configuration dans [app/api/auth/](mdc:app/api/auth/)
+- **Middleware** : [middleware.ts](mdc:middleware.ts) pour la protection des routes
+- **Hooks** : [app/hooks/useConnectedUser.ts](mdc:app/hooks/useConnectedUser.ts) pour l'utilisateur connecté
+
+## Base de données
+- **Migrations** : Scripts SQL dans [migrations/](mdc:migrations/)
+- **Configuration** : [app/lib/db.ts](mdc:app/lib/db.ts)
+- **Types** : Définitions dans [app/types/](mdc:app/types/)

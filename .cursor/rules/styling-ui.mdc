@@ -1,0 +1,78 @@
+---
+globs: *.tsx,*.css
+---
+
+# Styling et UI Guidelines
+
+## Tailwind CSS
+- **Classes utilitaires** : Utilisez les classes Tailwind pour le styling
+- **Mode sombre** : Toujours prévoir les variantes `dark:` pour tous les éléments
+- **Responsive** : Utilisez les breakpoints `sm:`, `md:`, `lg:`, `xl:`
+
+## Couleurs et thème
+- **Primaire** : `blue-600` pour les actions principales
+- **Succès** : `green-600` pour les éléments positifs
+- **Danger** : `red-500` pour les suppressions
+- **Warning** : `yellow-500` pour les sélections
+- **Neutre** : `gray-*` pour les éléments secondaires
+
+## Composants UI
+- **Boutons** : Utilisez des classes cohérentes pour les différents états
+- **Modales** : Z-index 50, backdrop semi-transparent
+- **Cards** : `bg-white dark:bg-gray-800` avec `rounded-lg shadow-md`
+- **Formulaires** : `border border-gray-300 dark:border-gray-600`
+
+## États interactifs
+- **Hover** : `hover:bg-*` pour les effets de survol
+- **Focus** : `focus:ring-*` pour les états de focus
+- **Disabled** : `disabled:opacity-50 disabled:cursor-not-allowed`
+- **Active** : `active:bg-*` pour les états actifs
+
+## Animations et transitions
+- **Transitions** : `transition-colors`, `transition-all` pour les changements d'état
+- **Spinners** : `animate-spin` pour les indicateurs de chargement
+- **Fade** : `opacity-0 group-hover:opacity-100` pour les tooltips
+
+## Layout et espacement
+- **Padding** : `p-*` pour l'espacement interne
+- **Margin** : `m-*` pour l'espacement externe
+- **Gap** : `gap-*` pour l'espacement entre les éléments flex/grid
+- **Space** : `space-x-*`, `space-y-*` pour l'espacement des enfants
+
+## Exemples de patterns
+```tsx
+// Bouton principal
+<button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
+  Action
+</button>
+
+// Bouton désactivé
+<button className="px-4 py-2 bg-gray-300 text-gray-500 cursor-not-allowed rounded-md">
+  Désactivé
+</button>
+
+// Card avec mode sombre
+<div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+  Contenu
+</div>
+
+// Indicateur de chargement
+<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+```
+
+## Modales
+- **Backdrop** : `bg-black bg-opacity-50`
+- **Container** : `bg-white dark:bg-gray-800 rounded-lg shadow-xl`
+- **Z-index** : `z-50` pour les modales
+- **Position** : `fixed inset-0 flex items-center justify-center`
+
+## Responsive design
+- **Mobile first** : Commencez par les styles mobiles
+- **Breakpoints** : `sm:`, `md:`, `lg:`, `xl:` pour les adaptations
+- **Grid** : `grid-cols-1 md:grid-cols-4` pour les layouts adaptatifs
+- **Flex** : `flex-col sm:flex-row` pour les changements d'orientation
+
+## Références
+- [app/globals.css](mdc:app/globals.css) : Styles globaux
+- [tailwind.config.ts](mdc:tailwind.config.ts) : Configuration Tailwind
+- [app/components/SelectedBookingModal.tsx](mdc:app/components/SelectedBookingModal.tsx) : Exemple de modale

@@ -1,0 +1,50 @@
+---
+description: Règles spécifiques au système de réservation de squash
+---
+
+# Système de Réservation de Squash
+
+## Fonctionnalités principales
+- **Sélection de créneaux** : Possibilité de sélectionner/désélectionner des créneaux déjà pris
+- **Recopie de créneaux** : Copie de créneaux sélectionnés vers une autre date
+- **Navigation temporelle** : Navigation jour/semaine avec les flèches
+- **Gestion des droits** : Utilisateurs avec droits administrateur
+
+## Composants clés
+- **[app/(auth)/reservations/page.tsx](mdc:app/(auth)/reservations/page.tsx)** : Page principale des réservations
+- **[app/components/SelectedBookingModal.tsx](mdc:app/components/SelectedBookingModal.tsx)** : Modale de recopie
+- **[app/components/ReservationModal.tsx](mdc:app/components/ReservationModal.tsx)** : Modale de création de réservation
+- **[app/components/DeleteReservationModal.tsx](mdc:app/components/DeleteReservationModal.tsx)** : Modale de suppression
+
+## Types de données
+- **Reservation** : Structure principale d'une réservation
+- **SelectedBooking** : Créneau sélectionné pour la recopie
+- **User** : Informations utilisateur (id, firstName, lastName)
+
+## États de sélection
+- **Créneaux disponibles** : Bouton "+" pour réserver
+- **Créneaux occupés** : Bouton de sélection + actions (QR, suppression)
+- **Créneaux sélectionnés** : Surbrillance jaune + coche
+
+## API de recopie
+- **Endpoint** : `POST /api/bookings`
+- **Payload** : `{ userIds, date, time, court }`
+- **Réponse** : HTTP 201 avec confirmation
+- **Progression** : Indicateur de progression pendant les appels
+
+## Navigation temporelle
+- **Jour précédent/suivant** : Flèches simples
+- **Semaine précédente/suivante** : Flèches doubles
+- **Format de date** : `yyyy-MM-dd` pour les URLs
+- **Affichage** : Format français avec `date-fns/locale`
+
+## Gestion des erreurs
+- **Validation** : Vérification des paramètres avant envoi
+- **Feedback utilisateur** : Messages d'erreur clairs
+- **Récupération** : Possibilité de réessayer en cas d'échec
+
+## Patterns d'interface
+- **Modales** : Z-index 50, backdrop semi-transparent
+- **Boutons d'action** : Couleurs cohérentes (bleu=action, rouge=suppression, vert=disponible)
+- **États de chargement** : Spinners et barres de progression
+- **Responsive** : Adaptation mobile avec Tailwind CSS

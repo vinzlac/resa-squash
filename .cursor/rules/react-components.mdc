@@ -1,0 +1,50 @@
+---
+globs: *.tsx,*.ts
+---
+
+# React Components Guidelines
+
+## Composants et Hooks
+- **Client Components** : Utilisez `'use client'` en haut des fichiers pour les composants interactifs
+- **Server Components** : Par défaut, utilisez les Server Components pour les composants statiques
+- **Hooks personnalisés** : Stockés dans [app/hooks/](mdc:app/hooks/) avec préfixe `use`
+
+## Gestion d'état
+- **useState** : Pour l'état local des composants
+- **useEffect** : Pour les effets de bord et la synchronisation
+- **useCallback** : Pour mémoriser les fonctions et éviter les re-renders
+- **useRef** : Pour les références persistantes (ex: [app/(auth)/reservations/page.tsx](mdc:app/(auth)/reservations/page.tsx) ligne 49)
+
+## Modales et Overlays
+- **Z-index** : Utilisez `z-50` pour les modales (ex: [app/components/SelectedBookingModal.tsx](mdc:app/components/SelectedBookingModal.tsx))
+- **Backdrop** : `bg-black bg-opacity-50` pour l'arrière-plan des modales
+- **Fermeture** : Toujours prévoir un bouton de fermeture et la fermeture par clic extérieur
+
+## Styling
+- **Tailwind CSS** : Utilisez les classes Tailwind pour le styling
+- **Mode sombre** : Prévoir les variantes `dark:` pour tous les éléments
+- **Responsive** : Utilisez les préfixes `sm:`, `md:`, `lg:` pour la responsivité
+- **Animations** : Utilisez `transition-*` et `animate-*` pour les transitions
+
+## Props et Interfaces
+- **Interfaces TypeScript** : Définissez des interfaces claires pour les props
+- **Props optionnelles** : Utilisez `?` pour les props optionnelles
+- **Callbacks** : Nommez les callbacks avec préfixe `on` (ex: `onClose`, `onSuccess`)
+
+## Exemples de patterns
+```tsx
+// Composant avec état local
+const [isOpen, setIsOpen] = useState(false);
+
+// Callback mémorisé
+const handleClick = useCallback(() => {
+  // logique
+}, [dependencies]);
+
+// Interface pour les props
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  data?: SomeType;
+}
+```

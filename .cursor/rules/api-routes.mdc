@@ -1,0 +1,61 @@
+---
+globs: app/api/**/*.ts
+---
+
+# API Routes Guidelines
+
+## Structure des routes API
+- **Méthodes HTTP** : Implémentez les méthodes appropriées (GET, POST, PUT, DELETE)
+- **Validation** : Validez toujours les paramètres d'entrée
+- **Authentification** : Vérifiez l'authentification avec `extractTeamrToken`
+- **Gestion d'erreurs** : Utilisez les codes d'erreur standardisés
+
+## Exemple de structure
+```typescript
+export async function GET(request: NextRequest) {
+  try {
+    // 1. Vérifier l'authentification
+    const token = extractTeamrToken(request);
+    if (!token) {
+      return NextResponse.json({ error: { code: ErrorCode.UNAUTHORIZED } }, { status: 401 });
+    }
+
+    // 2. Extraire et valider les paramètres
+    const { searchParams } = new URL(request.url);
+    const param = searchParams.get('param');
+
+    // 3. Validation
+    if (!param) {
+      return NextResponse.json({ error: { code: ErrorCode.INVALID_PARAMETER } }, { status: 400 });
+    }
+
+    // 4. Logique métier
+    const result = await someService(param, token);
+
+    // 5. Retour de la réponse
+    return NextResponse.json(result);
+  } catch (error) {
+    // 6. Gestion d'erreurs
+    console.error('Erreur dans GET /api/endpoint:', error);
+    return NextResponse.json({ error: { code: ErrorCode.INTERNAL_SERVER_ERROR } }, { status: 500 });
+  }
+}
+```
+
+## Codes d'erreur
+- **UNAUTHORIZED** (401) : Authentification requise
+- **INVALID_PARAMETER** (400) : Paramètres invalides
+- **INTERNAL_SERVER_ERROR** (500) : Erreur serveur
+
+## Validation des paramètres
+- **ObjectId MongoDB** : Utilisez `/^[0-9a-fA-F]{24}$/` pour valider les ObjectId
+- **Dates** : Utilisez `isNaN(Date.parse(date))` pour valider les dates
+- **Arrays** : Vérifiez `Array.isArray()` et la longueur
+
+## Logging
+- **Console.log** : Utilisez des préfixes avec emojis pour identifier les logs
+- **Exemple** : `console.log('📥 GET /api/endpoint - Paramètres:', params)`
+
+## Références
+- [app/api/bookings/route.ts](mdc:app/api/bookings/route.ts) : Exemple complet avec GET et POST
+- [app/types/errors.ts](mdc:app/types/errors.ts) : Codes d'erreur standardisés

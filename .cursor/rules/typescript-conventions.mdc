@@ -1,0 +1,77 @@
+---
+globs: *.ts,*.tsx
+---
+
+# TypeScript Conventions
+
+## Interfaces et Types
+- **Interfaces** : Utilisez `interface` pour les objets complexes
+- **Types** : Utilisez `type` pour les unions et primitives
+- **Props** : Nommez les interfaces de props avec suffixe `Props`
+
+## Exemples de patterns
+```typescript
+// Interface pour les props de composant
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  data?: SomeType;
+}
+
+// Interface pour les données métier
+interface Reservation {
+  id: string;
+  time: string;
+  court: number;
+  users: User[];
+}
+
+// Type pour les unions
+type ErrorCode = 'UNAUTHORIZED' | 'INVALID_PARAMETER' | 'INTERNAL_SERVER_ERROR';
+```
+
+## Gestion des états
+- **useState** : Typage explicite des états
+- **useRef** : Typage des références avec `useRef<Type>`
+- **Callbacks** : Typage des fonctions de callback
+
+## Exemples d'état typé
+```typescript
+// État simple
+const [isOpen, setIsOpen] = useState<boolean>(false);
+
+// État complexe
+const [selectedBookings, setSelectedBookings] = useState<SelectedBooking[]>([]);
+
+// Ref typée
+const currentDateRef = useRef<string>(date);
+```
+
+## Props et Callbacks
+- **Props optionnelles** : Utilisez `?` pour les props optionnelles
+- **Callbacks** : Nommez avec préfixe `on` et typage explicite
+- **Children** : Utilisez `React.ReactNode` pour les enfants
+
+## Gestion d'erreurs
+- **Error types** : Créez des types d'erreur spécifiques
+- **ApiError** : Interface pour les erreurs API standardisées
+- **Try-catch** : Typage des erreurs avec `as Error`
+
+## Imports
+- **Ordre** : React imports, puis bibliothèques externes, puis imports locaux
+- **Types** : Importez les types avec `import type` quand possible
+- **Barrel exports** : Utilisez les index.ts pour les exports groupés
+
+## Exemples d'imports
+```typescript
+import { useState, useEffect, useCallback } from 'react';
+import { format, addDays, subDays } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import type { Reservation, User } from '@/app/types/reservation';
+import { useConnectedUser } from '@/app/hooks/useConnectedUser';
+```
+
+## Références
+- [app/types/](mdc:app/types/) : Définitions de types centralisées
+- [app/(auth)/reservations/page.tsx](mdc:app/(auth)/reservations/page.tsx) : Exemples d'usage
+- [app/components/SelectedBookingModal.tsx](mdc:app/components/SelectedBookingModal.tsx) : Props et callbacks
