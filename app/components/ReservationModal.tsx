@@ -230,6 +230,19 @@ export default function ReservationModal({
                 className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
               >
                 <option value="">Choisir un partenaire</option>
+                
+                {/* Option pour l'utilisateur connecté si on réserve au nom de quelqu'un d'autre */}
+                {!useConnectedUserAsPlayer && hasPowerUserRights && connectedUserId && connectedUserFullName && (
+                  <option 
+                    key={connectedUserId} 
+                    value={connectedUserId}
+                    disabled={selectedUserId === connectedUserId}
+                  >
+                    {connectedUserFullName} (Vous)
+                    {selectedUserId === connectedUserId ? ' (déjà sélectionné)' : ''}
+                  </option>
+                )}
+                
                 {getFavoriteLicensees().map(licensee => (
                   <option 
                     key={licensee.userId} 
