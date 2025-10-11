@@ -8,6 +8,8 @@ import Link from 'next/link';
 interface ActionLog {
   id: number;
   userId: string;
+  userFirstName: string;
+  userLastName: string;
   actionType: string;
   actionResult: string;
   actionTimestamp: string;
@@ -35,7 +37,9 @@ export default function ActionLogsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userIdFilter, setUserIdFilter] = useState('');
+  const [userNameFilter, setUserNameFilter] = useState('');
+  const [selectedActionTypes, setSelectedActionTypes] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState('');
   const [expandedLog, setExpandedLog] = useState<number | null>(null);
 
   const fetchLogs = async (page: number = 1) => {
@@ -45,8 +49,16 @@ export default function ActionLogsPage() {
       url.searchParams.set('page', page.toString());
       url.searchParams.set('limit', '20');
       
-      if (userIdFilter) {
-        url.searchParams.set('userId', userIdFilter);
+      if (userNameFilter) {
+        url.searchParams.set('userName', userNameFilter);
+      }
+      
+      if (selectedActionTypes.length > 0) {
+        url.searchParams.set('actionTypes', selectedActionTypes.join(','));
+      }
+      
+      if (statusFilter) {
+        url.searchParams.set('status', statusFilter);
       }
 
       const response = await fetch(url.toString());
@@ -67,7 +79,7 @@ export default function ActionLogsPage() {
 
   useEffect(() => {
     fetchLogs(1);
-  }, [userIdFilter]);
+  }, [userNameFilter, selectedActionTypes, statusFilter]);
 
   const getActionTypeLabel = (type: string) => {
     const labels: { [key: string]: string } = {
@@ -91,6 +103,20 @@ export default function ActionLogsPage() {
     return result === 'SUCCESS'
       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
       : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+  };
+
+  const toggleActionType = (actionType: string) => {
+    setSelectedActionTypes(prev => 
+      prev.includes(actionType) 
+        ? prev.filter(type => type !== actionType)
+        : [...prev, actionType]
+    );
+  };
+
+  const resetFilters = () => {
+    setUserNameFilter('');
+    setSelectedActionTypes([]);
+    setStatusFilter('');
   };
 
   return (
@@ -117,25 +143,66 @@ export default function ActionLogsPage() {
 
         {/* Filtres */}
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Filtre par nom */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Filtrer par User ID
+                Nom d&apos;utilisateur
               </label>
               <input
                 type="text"
-                value={userIdFilter}
-                onChange={(e) => setUserIdFilter(e.target.value)}
-                placeholder="Entrer un User ID..."
+                value={userNameFilter}
+                onChange={(e) => setUserNameFilter(e.target.value)}
+                placeholder="Entrer un nom ou prénom..."
                 className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
+
+            {/* Filtre par type d'action */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Type d&apos;action
+              </label>
+              <div className="space-y-2">
+                {['CONNEXION', 'ADD_BOOKING', 'DELETE_BOOKING'].map((actionType) => (
+                  <label key={actionType} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedActionTypes.includes(actionType)}
+                      onChange={() => toggleActionType(actionType)}
+                      className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                      {getActionTypeLabel(actionType)}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Filtre par statut */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Statut
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                <option value="">Tous les statuts</option>
+                <option value="SUCCESS">Succès</option>
+                <option value="FAILED">Échec</option>
+              </select>
+            </div>
+
+            {/* Bouton reset */}
             <div className="flex items-end">
               <button
-                onClick={() => setUserIdFilter('')}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
+                onClick={resetFilters}
+                className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
               >
-                Réinitialiser les filtres
+                Réinitialiser
               </button>
             </div>
           </div>
@@ -165,7 +232,7 @@ export default function ActionLogsPage() {
                         ID
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        User ID
+                        Utilisateur
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Type d&apos;action
@@ -187,8 +254,8 @@ export default function ActionLogsPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                           {log.id}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600 dark:text-gray-300">
-                          {log.userId.substring(0, 8)}...
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          {log.userFirstName} {log.userLastName}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionTypeBadge(log.actionType)}`}>
