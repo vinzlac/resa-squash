@@ -120,7 +120,7 @@ export async function DELETE(request: NextRequest) {
 
     // Extraction du body JSON
     const body = await request.json() as BookingRequest;
-    const { userId, partnerId } = body;
+    const { userId, partnerId, startDate } = body;
 
     // Validation des données
     if (!userId || !partnerId) {
@@ -132,17 +132,56 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Récupérer l'ID de l'utilisateur connecté depuis le token
+    const connectedUserId = extractConnectedUserId(request);
+    
+    // Vérifier si la réservation existe en base
+    const { executeQuery } = await import('@/app/lib/db');
+    const existingReservations = await executeQuery(
+      'SELECT * FROM reservations WHERE session_id = $1',
+      [sessionId]
+    );
+    
+    const reservationExistsInDB = existingReservations.length > 0;
+    console.log(`🔍 Réservation ${sessionId} existe en base:`, reservationExistsInDB);
+    
     // Appel à la fonction deleteBookSession (si ça échoue, on renvoie l'erreur)
     await deleteBookSession(sessionId, userId, partnerId, token);
     console.log('✅ Suppression TeamR réussie');
     
-    // Récupérer l'ID de l'utilisateur connecté depuis le token
-    const connectedUserId = extractConnectedUserId(request);
-    
     // Faire la suppression logique SEULEMENT si TeamR a réussi
     if (connectedUserId) {
-      await removeReservationIntoDB(sessionId);
-      console.log('✅ Suppression logique effectuée');
+      if (reservationExistsInDB) {
+        // Mettre à jour l'enregistrement existant
+        await removeReservationIntoDB(sessionId);
+        console.log('✅ Suppression logique effectuée (UPDATE)');
+      } else {
+        // Créer une nouvelle entrée avec deleted=true
+        // Récupérer les informations de la session pour obtenir le court et le clubId
+        const { getDailyReservations } = await import('@/app/services/common');
+        const { COURT_CLUB_IDS } = await import('@/app/services/config');
+        const reservations = await getDailyReservations(
+          new Date(startDate).toISOString().split('T')[0],
+          token
+        );
+        const sessionInfo = reservations.find(r => r.id === sessionId);
+        
+        // Obtenir le clubId à partir du numéro de court
+        const clubId = sessionInfo ? COURT_CLUB_IDS[sessionInfo.court.toString()] : '';
+        
+        console.log('📋 Session info pour insertion:', {
+          sessionId,
+          court: sessionInfo?.court,
+          clubId
+        });
+        
+        // Créer l'entrée avec deleted=true directement
+        await executeQuery(
+          'INSERT INTO reservations (booking_action_user_id, session_id, user_id, partner_id, start_date, club_id, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [connectedUserId, sessionId, userId, partnerId, new Date(startDate).toISOString(), clubId, true]
+        );
+        console.log('✅ Suppression logique effectuée (INSERT avec deleted=true)');
+      }
     }
     
     return NextResponse.json({ success: true });
