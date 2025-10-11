@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
@@ -13,7 +13,7 @@ interface ActionLog {
   actionType: string;
   actionResult: string;
   actionTimestamp: string;
-  actionDetails: any;
+  actionDetails: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -42,7 +42,7 @@ export default function ActionLogsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [expandedLog, setExpandedLog] = useState<number | null>(null);
 
-  const fetchLogs = async (page: number = 1) => {
+  const fetchLogs = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
       const url = new URL('/api/admin/action-logs', window.location.origin);
@@ -75,11 +75,11 @@ export default function ActionLogsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userNameFilter, selectedActionTypes, statusFilter]);
 
   useEffect(() => {
     fetchLogs(1);
-  }, [userNameFilter, selectedActionTypes, statusFilter]);
+  }, [fetchLogs]);
 
   const getActionTypeLabel = (type: string) => {
     const labels: { [key: string]: string } = {

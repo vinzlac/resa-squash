@@ -185,12 +185,10 @@ export async function DELETE(request: NextRequest) {
     );
     const sessionInfo = reservations.find(r => r.id === sessionId);
     
-    let deleteSuccess = false;
     try {
       // Appel à la fonction deleteBookSession (si ça échoue, on renvoie l'erreur)
       await deleteBookSession(sessionId, userId, partnerId, token);
       console.log('✅ Suppression TeamR réussie');
-      deleteSuccess = true;
       
       // Faire la suppression logique SEULEMENT si TeamR a réussi
       if (connectedUserId) {

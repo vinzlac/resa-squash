@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
     const rows = await executeQuery(query, params);
 
     // Récupérer les informations utilisateur pour tous les userIds uniques
-    const uniqueUserIds = [...new Set(rows.map((row: any) => row.user_id))];
+    const uniqueUserIds = [...new Set(rows.map((row: Record<string, unknown>) => row.user_id as string))];
     const licenseeMap = await fetchAllLicenseesByEmail(token);
     
     // Créer un map userId -> { firstName, lastName }
@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
     // Pour chaque userId, chercher dans les licenciés
     for (const userId of uniqueUserIds) {
       // Chercher dans la map des licenciés par email (on va devoir faire une recherche inverse)
-      for (const [email, licensee] of licenseeMap.entries()) {
+      for (const [, licensee] of licenseeMap.entries()) {
         if (licensee.user[0]?._id === userId) {
           userInfoMap.set(userId, {
             firstName: licensee.user[0].firstName,
@@ -169,18 +169,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Transformer les résultats avec les informations utilisateur
-    let actionLogs = rows.map((row: any) => {
-      const userInfo = userInfoMap.get(row.user_id);
+    let actionLogs = rows.map((row: Record<string, unknown>) => {
+      const userInfo = userInfoMap.get(row.user_id as string);
       return {
-        id: row.id,
-        userId: row.user_id,
+        id: row.id as number,
+        userId: row.user_id as string,
         userFirstName: userInfo?.firstName || 'Inconnu',
         userLastName: userInfo?.lastName || 'Utilisateur',
-        actionType: row.action_type,
-        actionResult: row.action_result,
-        actionTimestamp: row.action_timestamp,
-        actionDetails: row.action_details,
-        createdAt: row.created_at
+        actionType: row.action_type as string,
+        actionResult: row.action_result as string,
+        actionTimestamp: row.action_timestamp as string,
+        actionDetails: row.action_details as Record<string, unknown>,
+        createdAt: row.created_at as string
       };
     });
 

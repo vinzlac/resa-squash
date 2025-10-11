@@ -146,7 +146,7 @@ export async function logAction(
   userId: string,
   actionType: string,
   actionResult: string,
-  actionDetails: Record<string, any>
+  actionDetails: Record<string, unknown>
 ) {
   try {
     await executeQuery(
