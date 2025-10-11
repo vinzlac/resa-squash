@@ -1,0 +1,38 @@
+# Cursor ignore file - fichiers à exclure de l'indexation Cursor
+
+# Git internals - Fichiers internes de Git
+.git/
+.git/**
+*.git
+
+# Node modules - déjà dans .gitignore mais aussi pour Cursor
+node_modules/
+node_modules/**
+
+# Build outputs
+.next/
+out/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Cache files
+.cache/
+.turbo/
+
+# IDE files
+.vscode/
+.idea/
+
+# Large data files (si applicable)
+public/allLicencies.json
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+
+

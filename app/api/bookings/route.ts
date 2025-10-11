@@ -233,16 +233,31 @@ export async function POST(request: NextRequest) {
       const { createReservationIntoDB } = await import('@/app/lib/db');
       const { extractConnectedUserId } = await import('@/app/utils/auth');
       
-      // Construire la date correctement avec le timezone local
-      const startDate = new Date(`${date}T${beginTime.replace('H', ':')}:00`);
+      // Construire la date en spécifiant explicitement le timezone Europe/Paris
+      // Déterminer l'offset pour Paris (UTC+1 en hiver, UTC+2 en été)
+      const tempDate = new Date(`${date}T12:00:00`);
+      const parisOffset = tempDate.toLocaleString('en-US', { timeZone: 'Europe/Paris', hour12: false });
+      const utcOffset = tempDate.toLocaleString('en-US', { timeZone: 'UTC', hour12: false });
+      
+      // Calculer la différence d'heures entre Paris et UTC
+      const parisHour = parseInt(parisOffset.split(', ')[1].split(':')[0]);
+      const utcHour = parseInt(utcOffset.split(', ')[1].split(':')[0]);
+      const offsetHours = (parisHour - utcHour + 24) % 24;
+      
+      // Construire la date avec l'offset correct
+      const offsetString = offsetHours === 1 ? '+01:00' : '+02:00';
+      const dateTimeString = `${date}T${beginTime.replace('H', ':')}:00${offsetString}`;
+      const startDate = new Date(dateTimeString);
       
       console.log('📅 Construction de la date:', {
         date,
         beginTime,
-        startDateString: `${date}T${beginTime.replace('H', ':')}:00`,
+        offsetHours,
+        offsetString,
+        dateTimeString,
         startDate: startDate.toISOString(),
         startDateLocal: startDate.toString(),
-        timezoneOffset: startDate.getTimezoneOffset()
+        serverTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone
       });
       
       const bookingData = {
