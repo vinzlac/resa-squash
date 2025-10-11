@@ -13,6 +13,16 @@ import './app/lib/buildTimeConfig.mjs';  // Changé en .mjs pour la cohérence E
 const nextConfig = {
   // Ajoutez ici votre configuration Next.js
   reactStrictMode: true, // Active le mode strict de React
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'teamr-assets.s3.eu-west-3.amazonaws.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
