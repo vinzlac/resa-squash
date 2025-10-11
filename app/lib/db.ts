@@ -140,3 +140,65 @@ export async function getAllLicensees(): Promise<Licensee[]> {
     throw error;
   }
 }
+
+// Fonction pour logger une action utilisateur
+export async function logAction(
+  userId: string,
+  actionType: string,
+  actionResult: string,
+  actionDetails: Record<string, any>
+) {
+  try {
+    await executeQuery(
+      `INSERT INTO action_log (user_id, action_type, action_result, action_timestamp, action_details) 
+       VALUES ($1, $2::action_type, $3::action_result, $4, $5)`,
+      [userId, actionType, actionResult, new Date().toISOString(), JSON.stringify(actionDetails)]
+    );
+    console.log(`📝 Action loggée: ${actionType} - ${actionResult}`);
+  } catch (error) {
+    console.error('Erreur lors du logging de l\'action:', error);
+    // Ne pas propager l'erreur pour ne pas bloquer le flux principal
+  }
+}
+
+// Fonctions spécifiques pour chaque type d'action
+export async function logConnexion(userId: string, email: string, success: boolean) {
+  await logAction(
+    userId,
+    'CONNEXION',
+    success ? 'SUCCESS' : 'FAILED',
+    { email }
+  );
+}
+
+export async function logAddBooking(
+  userId: string,
+  court: number,
+  date: string,
+  time: string,
+  userIds: string[],
+  success: boolean
+) {
+  await logAction(
+    userId,
+    'ADD_BOOKING',
+    success ? 'SUCCESS' : 'FAILED',
+    { court, date, time, userIds }
+  );
+}
+
+export async function logDeleteBooking(
+  userId: string,
+  court: number,
+  date: string,
+  time: string,
+  userIds: string[],
+  success: boolean
+) {
+  await logAction(
+    userId,
+    'DELETE_BOOKING',
+    success ? 'SUCCESS' : 'FAILED',
+    { court, date, time, userIds }
+  );
+}

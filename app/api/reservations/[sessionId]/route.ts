@@ -52,25 +52,57 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Appel à la fonction bookSession
-    const result = await bookSession(sessionId, userId, partnerId, token);
-    
     // Récupérer l'ID de l'utilisateur connecté depuis le token
     const connectedUserId = extractConnectedUserId(request);
     
-    // Logger l'action de création de réservation avec l'utilisateur connecté
-    if (connectedUserId) {
-      await createReservationIntoDB(
-        connectedUserId,
-        sessionId,
-        userId,
-        partnerId,
-        new Date(startDate),
-        result.session.clubId
-      );
+    let result;
+    try {
+      // Appel à la fonction bookSession
+      result = await bookSession(sessionId, userId, partnerId, token);
+      
+      // Logger l'action de création de réservation avec l'utilisateur connecté
+      if (connectedUserId) {
+        await createReservationIntoDB(
+          connectedUserId,
+          sessionId,
+          userId,
+          partnerId,
+          new Date(startDate),
+          result.session.clubId
+        );
+        
+        // Logger l'action ADD_BOOKING
+        const { logAddBooking } = await import('@/app/lib/db');
+        const { getDailyReservations } = await import('@/app/services/common');
+        
+        // Récupérer le numéro de court
+        const reservations = await getDailyReservations(
+          new Date(startDate).toISOString().split('T')[0],
+          token
+        );
+        const sessionInfo = reservations.find(r => r.id === sessionId);
+        
+        if (sessionInfo) {
+          await logAddBooking(
+            connectedUserId,
+            sessionInfo.court,
+            new Date(startDate).toISOString().split('T')[0],
+            sessionInfo.time,
+            [userId, partnerId],
+            true
+          );
+        }
+      }
+      
+      return NextResponse.json(result);
+    } catch (bookingError) {
+      // Logger l'échec de la réservation
+      if (connectedUserId) {
+        const { logAddBooking } = await import('@/app/lib/db');
+        await logAddBooking(connectedUserId, 0, '', '', [userId, partnerId], false);
+      }
+      throw bookingError;
     }
-    
-    return NextResponse.json(result);
 
   } catch (error) {
     if ((error as ApiError).code === ErrorCode.INVALID_PARAMETER) {
@@ -145,46 +177,78 @@ export async function DELETE(request: NextRequest) {
     const reservationExistsInDB = existingReservations.length > 0;
     console.log(`🔍 Réservation ${sessionId} existe en base:`, reservationExistsInDB);
     
-    // Appel à la fonction deleteBookSession (si ça échoue, on renvoie l'erreur)
-    await deleteBookSession(sessionId, userId, partnerId, token);
-    console.log('✅ Suppression TeamR réussie');
+    // Récupérer les informations de la session pour le logging
+    const { getDailyReservations } = await import('@/app/services/common');
+    const reservations = await getDailyReservations(
+      new Date(startDate).toISOString().split('T')[0],
+      token
+    );
+    const sessionInfo = reservations.find(r => r.id === sessionId);
     
-    // Faire la suppression logique SEULEMENT si TeamR a réussi
-    if (connectedUserId) {
-      if (reservationExistsInDB) {
-        // Mettre à jour l'enregistrement existant
-        await removeReservationIntoDB(sessionId);
-        console.log('✅ Suppression logique effectuée (UPDATE)');
-      } else {
-        // Créer une nouvelle entrée avec deleted=true
-        // Récupérer les informations de la session pour obtenir le court et le clubId
-        const { getDailyReservations } = await import('@/app/services/common');
-        const { COURT_CLUB_IDS } = await import('@/app/services/config');
-        const reservations = await getDailyReservations(
-          new Date(startDate).toISOString().split('T')[0],
-          token
-        );
-        const sessionInfo = reservations.find(r => r.id === sessionId);
+    let deleteSuccess = false;
+    try {
+      // Appel à la fonction deleteBookSession (si ça échoue, on renvoie l'erreur)
+      await deleteBookSession(sessionId, userId, partnerId, token);
+      console.log('✅ Suppression TeamR réussie');
+      deleteSuccess = true;
+      
+      // Faire la suppression logique SEULEMENT si TeamR a réussi
+      if (connectedUserId) {
+        if (reservationExistsInDB) {
+          // Mettre à jour l'enregistrement existant
+          await removeReservationIntoDB(sessionId);
+          console.log('✅ Suppression logique effectuée (UPDATE)');
+        } else {
+          // Créer une nouvelle entrée avec deleted=true
+          const { COURT_CLUB_IDS } = await import('@/app/services/config');
+          
+          // Obtenir le clubId à partir du numéro de court
+          const clubId = sessionInfo ? COURT_CLUB_IDS[sessionInfo.court.toString()] : '';
+          
+          console.log('📋 Session info pour insertion:', {
+            sessionId,
+            court: sessionInfo?.court,
+            clubId
+          });
+          
+          // Créer l'entrée avec deleted=true directement
+          await executeQuery(
+            'INSERT INTO reservations (booking_action_user_id, session_id, user_id, partner_id, start_date, club_id, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [connectedUserId, sessionId, userId, partnerId, new Date(startDate).toISOString(), clubId, true]
+          );
+          console.log('✅ Suppression logique effectuée (INSERT avec deleted=true)');
+        }
         
-        // Obtenir le clubId à partir du numéro de court
-        const clubId = sessionInfo ? COURT_CLUB_IDS[sessionInfo.court.toString()] : '';
-        
-        console.log('📋 Session info pour insertion:', {
-          sessionId,
-          court: sessionInfo?.court,
-          clubId
-        });
-        
-        // Créer l'entrée avec deleted=true directement
-        await executeQuery(
-          'INSERT INTO reservations (booking_action_user_id, session_id, user_id, partner_id, start_date, club_id, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [connectedUserId, sessionId, userId, partnerId, new Date(startDate).toISOString(), clubId, true]
-        );
-        console.log('✅ Suppression logique effectuée (INSERT avec deleted=true)');
+        // Logger l'action DELETE_BOOKING
+        const { logDeleteBooking } = await import('@/app/lib/db');
+        if (sessionInfo) {
+          await logDeleteBooking(
+            connectedUserId,
+            sessionInfo.court,
+            new Date(startDate).toISOString().split('T')[0],
+            sessionInfo.time,
+            [userId, partnerId],
+            true
+          );
+        }
       }
+      
+      return NextResponse.json({ success: true });
+    } catch (deleteError) {
+      // Logger l'échec de la suppression
+      if (connectedUserId && sessionInfo) {
+        const { logDeleteBooking } = await import('@/app/lib/db');
+        await logDeleteBooking(
+          connectedUserId,
+          sessionInfo.court,
+          new Date(startDate).toISOString().split('T')[0],
+          sessionInfo.time,
+          [userId, partnerId],
+          false
+        );
+      }
+      throw deleteError;
     }
-    
-    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Erreur lors de la suppression de la réservation:', error);
     return NextResponse.json({

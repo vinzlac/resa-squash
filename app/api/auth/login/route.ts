@@ -4,6 +4,7 @@ import { authenticateUser } from '@/app/services/common';
 import { COOKIE_NAMES } from '@/app/constants/cookies';
 import { decodeTeamRJwtToken } from '@/app/utils/auth';
 import { getUserRights } from '@/app/services/rightsService';
+import { logConnexion } from '@/app/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,8 +66,19 @@ export async function POST(request: NextRequest) {
         maxAge
       });
 
+      // Logger la connexion réussie
+      await logConnexion(decodedToken.userId, email, true);
+
       return responseJson;
     } catch (error) {
+      // Logger la tentative de connexion échouée
+      // On ne peut pas avoir le userId ici, on utilise l'email comme identifiant
+      try {
+        await logConnexion('unknown', email, false);
+      } catch (logError) {
+        console.error('Erreur lors du logging de la connexion échouée:', logError);
+      }
+      
       // Erreur d'authentification TeamR
       return NextResponse.json(
         { error: error instanceof Error ? error.message : 'Erreur d\'authentification' },
