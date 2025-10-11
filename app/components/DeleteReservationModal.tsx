@@ -3,6 +3,7 @@
 import { useConnectedUser } from '@/app/hooks/useConnectedUser';
 import { useUserRights } from '@/app/hooks/useUserRights';
 import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 
 interface DeleteReservationModalProps {
   isOpen: boolean;
@@ -59,13 +60,21 @@ export default function DeleteReservationModal({
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error?.message || 'Erreur lors de la suppression');
+        const errorMessage = data.error?.message || 'Erreur lors de la suppression';
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
       }
 
+      toast.success('Réservation supprimée avec succès');
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      const errorMessage = err instanceof Error ? err.message : 'Une erreur est survenue';
+      setError(errorMessage);
+      // Le toast.error est déjà appelé plus haut si c'est une erreur HTTP
+      if (!errorMessage.includes('Erreur lors de la suppression')) {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }

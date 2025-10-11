@@ -132,15 +132,17 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Appel à la fonction deleteBookSession
+    // Appel à la fonction deleteBookSession (si ça échoue, on renvoie l'erreur)
     await deleteBookSession(sessionId, userId, partnerId, token);
+    console.log('✅ Suppression TeamR réussie');
     
     // Récupérer l'ID de l'utilisateur connecté depuis le token
     const connectedUserId = extractConnectedUserId(request);
     
-    // Logger l'action de suppression de réservation avec l'utilisateur connecté
+    // Faire la suppression logique SEULEMENT si TeamR a réussi
     if (connectedUserId) {
       await removeReservationIntoDB(sessionId);
+      console.log('✅ Suppression logique effectuée');
     }
     
     return NextResponse.json({ success: true });

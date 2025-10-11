@@ -232,10 +232,29 @@ function ReservationsContent() {
       // Vérifier que le sessionId correspond (IMPORTANT !)
       const isSameSessionId = booking.sessionId === sessionId;
       
-      return isBookingActionUser && isSameDateTime && isSameSessionId;
+      // Vérifier que le créneau n'a pas été supprimé logiquement
+      const isNotDeleted = !booking.deleted;
+      
+      return isBookingActionUser && isSameDateTime && isSameSessionId && isNotDeleted;
     });
     
     return result;
+  };
+
+  // Fonction pour vérifier si un créneau a été supprimé logiquement
+  const isLogicallyDeleted = (sessionId: string, time: string) => {
+    if (!userId) return false;
+    
+    // Construire la date/heure de début pour la comparaison
+    const startDateTime = new Date(`${date}T${time.replace('H', ':')}:00`);
+    
+    return userBookings.some(booking => {
+      const bookingStartDate = new Date(booking.startDate);
+      const isSameDateTime = bookingStartDate.getTime() === startDateTime.getTime();
+      const isSameSessionId = booking.sessionId === sessionId;
+      
+      return isSameDateTime && isSameSessionId && booking.deleted;
+    });
   };
 
   // Dans le rendu des créneaux, ajoutez l'icône "+" pour les créneaux disponibles
@@ -249,6 +268,7 @@ function ReservationsContent() {
     const isBookedByUser = timeSlot ? isBookedByCurrentUser(timeSlot.sessionId, time) : false;
     const isParticipant = timeSlot?.users.some(user => user.id === userId);
     const isMyBooking = isBookedByUser || isParticipant;
+    const isDeleted = timeSlot ? isLogicallyDeleted(timeSlot.sessionId, time) : false;
     
     if (isDatePassed) {
       return (
@@ -267,6 +287,8 @@ function ReservationsContent() {
         <div className={`p-2 rounded ${
           isSelected 
             ? 'bg-yellow-100 dark:bg-yellow-900 border-2 border-yellow-500' 
+            : isDeleted
+              ? 'bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700'
             : isMyBooking 
               ? 'bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700' 
               : 'bg-blue-100 dark:bg-blue-900'
@@ -298,51 +320,60 @@ function ReservationsContent() {
           ) : (
             <div className="flex justify-between items-center">
               <div className="group relative flex-1">
-                <span className={`cursor-help ${isMyBooking ? 'text-green-800 dark:text-green-200 font-medium' : 'text-gray-900 dark:text-white'}`}>
+                <span className={`cursor-help ${
+                  isDeleted 
+                    ? 'text-gray-500 dark:text-gray-400 line-through' 
+                    : isMyBooking 
+                      ? 'text-green-800 dark:text-green-200 font-medium' 
+                      : 'text-gray-900 dark:text-white'
+                }`}>
                   {timeSlot.users.map(user => {
                     const isCurrentUser = user.id === userId;
                     return (
-                      <span key={user.id} className={isCurrentUser ? 'font-bold' : ''}>
+                      <span key={user.id} className={isCurrentUser && !isDeleted ? 'font-bold' : ''}>
                         {user.firstName} {user.lastName}
-                        {isCurrentUser && ' (Vous)'}
+                        {isCurrentUser && !isDeleted && ' (Vous)'}
                       </span>
                     );
                   }).reduce((acc, curr, index) => {
                     return index === 0 ? [curr] : [...acc, ', ', curr];
                   }, [] as React.ReactNode[])}
+                  {isDeleted && ' (Supprimé)'}
                 </span>
                 <div className="absolute left-0 top-0 mt-6 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
                   <div className="bg-black text-white text-xs rounded py-1 px-2 whitespace-pre">
                     {JSON.stringify({
                       sessionId: timeSlot.sessionId,
                       userId: timeSlot.users[0]?.id,
-                      partnerId: timeSlot.users[1]?.id
+                      partnerId: timeSlot.users[1]?.id,
+                      deleted: isDeleted
                     }, null, 2)}
                   </div>
                   <div className="w-3 h-3 left-3 -top-1 absolute transform rotate-45 bg-black"></div>
                 </div>
               </div>
               <div className="flex ml-2 items-center">
-                {/* Bouton de sélection */}
-                <button
-                  onClick={() => {
-                    // Trouver la réservation complète pour récupérer endTime
-                    const fullReservation = reservations.find(r => r.id.toString() === timeSlot.sessionId);
-                    handleBookingSelect(
-                      timeSlot.sessionId, 
-                      timeSlot.time, 
-                      fullReservation?.endTime || timeSlot.time, 
-                      parseInt(courtId), 
-                      timeSlot.users
-                    );
-                  }}
-                  className={`mr-2 w-6 h-6 flex items-center justify-center rounded ${
-                    isSelected 
-                      ? 'bg-yellow-500 text-white' 
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
-                  }`}
-                  title={isSelected ? "Désélectionner" : "Sélectionner"}
-                >
+                {/* Bouton de sélection - Masqué si supprimé logiquement */}
+                {!isDeleted && (
+                  <button
+                    onClick={() => {
+                      // Trouver la réservation complète pour récupérer endTime
+                      const fullReservation = reservations.find(r => r.id.toString() === timeSlot.sessionId);
+                      handleBookingSelect(
+                        timeSlot.sessionId, 
+                        timeSlot.time, 
+                        fullReservation?.endTime || timeSlot.time, 
+                        parseInt(courtId), 
+                        timeSlot.users
+                      );
+                    }}
+                    className={`mr-2 w-6 h-6 flex items-center justify-center rounded ${
+                      isSelected 
+                        ? 'bg-yellow-500 text-white' 
+                        : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                    }`}
+                    title={isSelected ? "Désélectionner" : "Sélectionner"}
+                  >
                   {isSelected ? (
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -352,10 +383,11 @@ function ReservationsContent() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                   )}
-                </button>
+                  </button>
+                )}
 
-                {/* Bouton QR Code - Affiché si l'utilisateur connecté fait partie de la réservation */}
-                {timeSlot.users.some(user => user.id === userId) && (
+                {/* Bouton QR Code - Affiché si l'utilisateur connecté fait partie de la réservation et non supprimé */}
+                {!isDeleted && timeSlot.users.some(user => user.id === userId) && (
                   <button
                     onClick={() => handleQRCodeClick(timeSlot.sessionId, userId || '')}
                     className="mr-2 text-blue-500 hover:text-blue-700"
@@ -367,8 +399,8 @@ function ReservationsContent() {
                   </button>
                 )}
                 
-                {/* Bouton Suppression - Affiché si l'utilisateur a pris la réservation OU s'il a les droits admin */}
-                {(timeSlot.users[0]?.id === userId || hasPowerUserRights) && (
+                {/* Bouton Suppression - Affiché si l'utilisateur a pris la réservation OU s'il a les droits admin, et non déjà supprimé */}
+                {!isDeleted && (timeSlot.users[0]?.id === userId || hasPowerUserRights) && (
                   <button
                     onClick={() => {
                       // Déterminer le mainUserId (toujours le premier utilisateur)
@@ -534,7 +566,10 @@ function ReservationsContent() {
             timeSlot={reservationsByCourtNumber[parseInt(selectedSlot.sessionId.split('-')[0])]?.find(
               slot => slot.time === selectedSlot.time
             ) || { users: [] }}
-            onSuccess={fetchReservations}
+            onSuccess={() => {
+              fetchReservations();
+              fetchUserBookings();
+            }}
           />
         )}
 
@@ -548,7 +583,10 @@ function ReservationsContent() {
             sessionId={slotToDelete.sessionId}
             partnerId={slotToDelete.partnerId}
             mainUserId={slotToDelete.mainUserId}
-            onSuccess={fetchReservations}
+            onSuccess={() => {
+              fetchReservations();
+              fetchUserBookings();
+            }}
             time={slotToDelete.time}
             date={date}
             startDate={new Date(date + 'T' + slotToDelete.time.replace('H', ':') + ':00')}
@@ -574,6 +612,8 @@ function ReservationsContent() {
           onRecopySuccess={() => {
             // Rafraîchir les réservations après la recopie
             fetchReservations();
+            // Rafraîchir les réservations utilisateur
+            fetchUserBookings();
             // Vider la sélection
             setSelectedBookings([]);
           }}

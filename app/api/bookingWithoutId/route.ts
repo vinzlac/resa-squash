@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Récupérer toutes les futures réservations où l'utilisateur connecté a fait la réservation
     const now = new Date().toISOString();
     const rows = await executeQuery(`
-      SELECT session_id, user_id, partner_id, start_date, club_id, booking_action_user_id, created_at
+      SELECT session_id, user_id, partner_id, start_date, club_id, booking_action_user_id, created_at, deleted
       FROM reservations
       WHERE booking_action_user_id = $1 AND start_date >= $2
       ORDER BY start_date ASC
@@ -43,7 +43,8 @@ export async function GET(request: NextRequest) {
       startDate: row.start_date ? new Date(row.start_date).toISOString() : new Date().toISOString(),
       clubId: row.club_id,
       bookingActionUserId: row.booking_action_user_id, // L'utilisateur qui a fait la réservation
-      createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString()
+      createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
+      deleted: row.deleted || false
     }));
 
     return NextResponse.json(bookings);

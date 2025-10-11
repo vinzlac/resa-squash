@@ -29,7 +29,7 @@ export const db = pool;
 // Fonction utilitaire pour exécuter des requêtes SQL
 export async function executeQuery(
   query: string,
-  params: Array<string | number> = []
+  params: Array<string | number | boolean> = []
 ) {
   if (process.env.DATABASE_TYPE === "vercel") {
     const result = await vercelSql.query(query, params);
@@ -94,8 +94,8 @@ export async function createReservationIntoDB(
 ) {
   try {
     await executeQuery(
-      "INSERT INTO reservations (booking_action_user_id, session_id, user_id, partner_id, start_date, club_id) VALUES ($1, $2, $3, $4, $5, $6)",
-      [bookingActionUserId, sessionId, userId, partnerId, startDate.toISOString(), clubId]
+      "INSERT INTO reservations (booking_action_user_id, session_id, user_id, partner_id, start_date, club_id, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+      [bookingActionUserId, sessionId, userId, partnerId, startDate.toISOString(), clubId, false]
     );
   } catch (error) {
     console.error(`Error logging reservation creation:`, error);
@@ -103,13 +103,14 @@ export async function createReservationIntoDB(
   }
 }
 
-// Fonction pour enregistrer une suppression de réservation
+// Fonction pour enregistrer une suppression de réservation (suppression logique)
 export async function removeReservationIntoDB(sessionId: string) {
   try {
     await executeQuery(
-      "DELETE FROM reservations WHERE session_id = $1",
+      "UPDATE reservations SET deleted = TRUE WHERE session_id = $1",
       [sessionId]
     );
+    console.log(`✅ Réservation ${sessionId} marquée comme supprimée logiquement`);
   } catch (error) {
     console.error(`Error logging reservation deletion:`, error);
     // Ne pas propager l'erreur pour ne pas bloquer le flux principal

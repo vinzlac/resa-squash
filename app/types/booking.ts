@@ -14,6 +14,7 @@ export interface Booking extends CommonBooking {
 
 export interface BookingWithoutId extends CommonBooking {
   createdAt: string;
+  deleted: boolean;
 }
 
 export interface MergeBooking extends CommonBooking {
