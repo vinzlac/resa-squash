@@ -272,11 +272,85 @@ function ReservationsContent() {
     
     if (isDatePassed) {
       return (
-        <div className={`p-2 rounded ${isMyBooking ? 'bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700' : 'bg-gray-100 dark:bg-gray-700'}`}>
-          <span className={`${isMyBooking ? 'text-green-800 dark:text-green-200 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
-            {timeSlot?.users.length ? timeSlot.users.map(user => `${user.firstName} ${user.lastName}`).join(', ') : 'Personne'}
-            {isMyBooking && ' (Votre réservation)'}
-          </span>
+        <div className={`p-2 rounded ${
+          isSelected 
+            ? 'bg-yellow-100 dark:bg-yellow-900 border-2 border-yellow-500' 
+            : isDeleted
+              ? 'bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700'
+            : isMyBooking 
+              ? 'bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700' 
+              : 'bg-gray-100 dark:bg-gray-700'
+        }`}>
+          <div className="flex justify-between items-center">
+            <div className="group relative flex-1">
+              <span className={`${
+                isDeleted 
+                  ? 'text-gray-500 dark:text-gray-400 line-through' 
+                  : isMyBooking 
+                    ? 'text-green-800 dark:text-green-200 font-medium' 
+                    : 'text-gray-500 dark:text-gray-400'
+              }`}>
+                {timeSlot?.users.length ? timeSlot.users.map(user => {
+                  const isCurrentUser = user.id === userId;
+                  return (
+                    <span key={user.id} className={isCurrentUser && !isDeleted ? 'font-bold' : ''}>
+                      {user.firstName} {user.lastName}
+                      {isCurrentUser && !isDeleted && ' (Vous)'}
+                    </span>
+                  );
+                }).reduce((acc, curr, index) => {
+                  return index === 0 ? [curr] : [...acc, ', ', curr];
+                }, [] as React.ReactNode[]) : 'Personne'}
+                {isDeleted && ' (Supprimé)'}
+                {isMyBooking && !isDeleted && ' (Votre réservation)'}
+              </span>
+              <div className="absolute left-0 top-0 mt-6 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
+                <div className="bg-black text-white text-xs rounded py-1 px-2 whitespace-pre">
+                  {JSON.stringify({
+                    sessionId: timeSlot?.sessionId,
+                    userId: timeSlot?.users[0]?.id,
+                    partnerId: timeSlot?.users[1]?.id,
+                    deleted: isDeleted
+                  }, null, 2)}
+                </div>
+                <div className="w-3 h-3 left-3 -top-1 absolute transform rotate-45 bg-black"></div>
+              </div>
+            </div>
+            <div className="flex ml-2 items-center">
+              {/* Bouton de sélection - Affiché même pour les dates passées */}
+              {!isDeleted && (
+                <button
+                  onClick={() => {
+                    // Trouver la réservation complète pour récupérer endTime
+                    const fullReservation = reservations.find(r => r.id.toString() === timeSlot?.sessionId);
+                    handleBookingSelect(
+                      timeSlot?.sessionId || '', 
+                      timeSlot?.time || '', 
+                      fullReservation?.endTime || timeSlot?.time || '', 
+                      parseInt(courtId), 
+                      timeSlot?.users || []
+                    );
+                  }}
+                  className={`mr-2 w-6 h-6 flex items-center justify-center rounded ${
+                    isSelected 
+                      ? 'bg-yellow-500 text-white' 
+                      : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                  }`}
+                  title={isSelected ? "Désélectionner" : "Sélectionner"}
+                >
+                {isSelected ? (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                )}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       );
     }
