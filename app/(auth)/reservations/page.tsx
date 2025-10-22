@@ -116,6 +116,7 @@ function ReservationsContent() {
   // Regrouper les réservations par terrain
   const reservationsByCourtNumber: { [courtNumber: number]: ReservationByTimeSlot[] } = {};
 
+  
   reservations.forEach((reservation) => {
     if (!reservationsByCourtNumber[reservation.court]) {
       reservationsByCourtNumber[reservation.court] = [];
@@ -134,7 +135,6 @@ function ReservationsContent() {
         users: reservation.available ? [] : reservation.users,
       });
     }
-    console.log('reservation:', reservation);
   });
 
   const handleReservationClick = (sessionId: string, time: string) => {
@@ -317,8 +317,8 @@ function ReservationsContent() {
               </div>
             </div>
             <div className="flex ml-2 items-center">
-              {/* Bouton de sélection - Affiché même pour les dates passées */}
-              {!isDeleted && (
+              {/* Bouton de sélection - Affiché seulement pour les créneaux pris (pas les vides) */}
+              {!isDeleted && timeSlot && timeSlot.users && timeSlot.users.length > 0 && (
                 <button
                   onClick={() => {
                     // Trouver la réservation complète pour récupérer endTime
@@ -331,11 +331,7 @@ function ReservationsContent() {
                       timeSlot?.users || []
                     );
                   }}
-                  className={`mr-2 w-6 h-6 flex items-center justify-center rounded ${
-                    isSelected 
-                      ? 'bg-yellow-500 text-white' 
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
-                  }`}
+                  className={`w-6 h-6 flex items-center justify-center text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300`}
                   title={isSelected ? "Désélectionner" : "Sélectionner"}
                 >
                 {isSelected ? (
@@ -343,7 +339,7 @@ function ReservationsContent() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 ) : (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 )}
