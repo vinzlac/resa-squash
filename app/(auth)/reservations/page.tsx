@@ -226,11 +226,14 @@ function ReservationsContent() {
   const handleShareSelectedSlots = async () => {
     if (selectedBookings.length === 0) return;
 
-    const shareText = generateSelectedSlotsShareText(selectedBookings);
+    const shareTextContent = generateSelectedSlotsShareText(selectedBookings);
+    
+    // On inclut le titre dans le text pour un comportement cohérent sur toutes les plateformes
+    // (sur iOS, le title n'est pas affiché, sur desktop il peut l'être, donc tout dans text)
+    const fullShareText = `Réservation de terrain - ${formattedDate}\n\n${shareTextContent}`;
     
     const success = await share({
-      title: `Réservation de terrain - ${formattedDate}`,
-      text: shareText,
+      text: fullShareText,
     });
 
     if (success && !isSupported) {
