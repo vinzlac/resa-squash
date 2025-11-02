@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { format, addDays, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useShare } from '@/app/hooks/useShare';
+import { generateMultipleReservationsShareText } from '@/app/utils/shareHelpers';
 
 interface SelectedBooking {
   sessionId: string;
@@ -37,6 +39,22 @@ export default function SelectedBookingModal({
 }: SelectedBookingModalProps) {
   const [isRecopying, setIsRecopying] = useState(false);
   const [recopyProgress, setRecopyProgress] = useState(0);
+  const { share, isSupported } = useShare();
+
+  const handleShare = async () => {
+    if (selectedBookings.length === 0) return;
+
+    const shareText = generateMultipleReservationsShareText(selectedBookings, currentDate);
+    const success = await share({
+      title: `Réservations de squash - ${format(new Date(currentDate), "dd/MM/yyyy", { locale: fr })}`,
+      text: shareText,
+    });
+
+    if (success && !isSupported) {
+      // Si on a utilisé le fallback (copie dans le presse-papiers)
+      alert('Texte copié dans le presse-papiers !');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -230,6 +248,24 @@ export default function SelectedBookingModal({
               Recopier vers: {formattedDate}
             </div>
             <div className="flex space-x-3">
+              {/* Bouton de partage */}
+              {(isSupported || selectedBookings.length > 0) && (
+                <button
+                  onClick={handleShare}
+                  disabled={selectedBookings.length === 0 || isRecopying}
+                  className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    selectedBookings.length === 0 || isRecopying
+                      ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                      : 'bg-green-600 hover:bg-green-700 text-white'
+                  }`}
+                  title={isSupported ? 'Partager les créneaux' : 'Copier les créneaux'}
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                  {isSupported ? 'Partager' : 'Copier'}
+                </button>
+              )}
               <button
                 onClick={handleRecopy}
                 disabled={selectedBookings.length === 0 || isRecopying}

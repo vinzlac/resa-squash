@@ -13,6 +13,8 @@ import DeleteReservationModal from '@/app/components/DeleteReservationModal';
 import { useUserRights } from '@/app/hooks/useUserRights';
 import QRCodeModal from '@/app/components/QRCodeModal';
 import SelectedBookingModal from '@/app/components/SelectedBookingModal';
+import { useShare } from '@/app/hooks/useShare';
+import { generateSelectedSlotsShareText } from '@/app/utils/shareHelpers';
 
 interface ReservationByTimeSlot {
   time: string;
@@ -60,8 +62,10 @@ function ReservationsContent() {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [qrCodeUri, setQrCodeUri] = useState<string | null>(null);
   const [qrCodeLoading, setQrCodeLoading] = useState(false);
+  const [qrCodeInfo, setQrCodeInfo] = useState<{ time?: string; court?: number; date?: string } | null>(null);
   const [selectedBookings, setSelectedBookings] = useState<SelectedBooking[]>([]);
   const [isSelectedBookingModalOpen, setIsSelectedBookingModalOpen] = useState(false);
+  const { share, isSupported } = useShare();
 
   // Utiliser useRef pour stocker la date actuelle
   const currentDateRef = useRef(date);
@@ -155,12 +159,19 @@ function ReservationsContent() {
     setIsDeleteModalOpen(true);
   };
 
-  const handleQRCodeClick = async (sessionId: string, userId: string) => {
+  const handleQRCodeClick = async (sessionId: string, userId: string, time: string, courtId: string) => {
     console.log('🔍 Ouverture du QR code pour sessionId:', sessionId, 'userId:', userId);
     
     setIsQRModalOpen(true);
     setQrCodeLoading(true);
     setQrCodeUri(null);
+    
+    // Stocker les informations du créneau pour le partage
+    setQrCodeInfo({
+      time: time,
+      court: parseInt(courtId),
+      date: date,
+    });
 
     try {
       const response = await fetch(`/api/bookings/qr-code?sessionId=${sessionId}&userId=${userId}`);
@@ -209,6 +220,23 @@ function ReservationsContent() {
 
   const handleRemoveBooking = (sessionId: string) => {
     setSelectedBookings(prev => prev.filter(booking => booking.sessionId !== sessionId));
+  };
+
+  // Fonction pour partager les créneaux sélectionnés
+  const handleShareSelectedSlots = async () => {
+    if (selectedBookings.length === 0) return;
+
+    const shareText = generateSelectedSlotsShareText(selectedBookings);
+    
+    const success = await share({
+      title: `Réservation de terrain - ${formattedDate}`,
+      text: shareText,
+    });
+
+    if (success && !isSupported) {
+      // Si on a utilisé le fallback (copie dans le presse-papiers)
+      alert('Texte copié dans le presse-papiers !');
+    }
   };
 
   // Fonction pour vérifier si un créneau a été pris par l'utilisateur connecté
@@ -459,7 +487,7 @@ function ReservationsContent() {
                 {/* Bouton QR Code - Affiché si l'utilisateur connecté fait partie de la réservation et non supprimé */}
                 {!isDeleted && timeSlot.users.some(user => user.id === userId) && (
                   <button
-                    onClick={() => handleQRCodeClick(timeSlot.sessionId, userId || '')}
+                    onClick={() => handleQRCodeClick(timeSlot.sessionId, userId || '', timeSlot.time, courtId)}
                     className="mr-2 text-blue-500 hover:text-blue-700"
                     title="Afficher le QR code"
                   >
@@ -560,25 +588,33 @@ function ReservationsContent() {
           </div>
         </div>
 
-        {/* Bouton Recopie */}
-        <div className="flex justify-center mb-6">
-          <button
-            onClick={() => setIsSelectedBookingModalOpen(true)}
-            disabled={selectedBookings.length === 0}
-            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-              selectedBookings.length === 0
-                ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Boutons d'action pour les créneaux sélectionnés */}
+        {selectedBookings.length > 0 && (
+          <div className="flex justify-center gap-3 mb-6">
+            {/* Bouton Partager */}
+            <button
+              onClick={handleShareSelectedSlots}
+              className="inline-flex items-center px-6 py-3 rounded-lg font-medium transition-colors bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg"
+              title={isSupported ? 'Partager les créneaux sélectionnés' : 'Copier les créneaux dans le presse-papiers'}
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+              <span>{isSupported ? 'Partager' : 'Copier'} ({selectedBookings.length})</span>
+            </button>
+
+            {/* Bouton Recopie */}
+            <button
+              onClick={() => setIsSelectedBookingModalOpen(true)}
+              className="inline-flex items-center px-6 py-3 rounded-lg font-medium transition-colors bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
               <span>Recopie ({selectedBookings.length})</span>
-            </div>
-          </button>
-        </div>
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex justify-center items-center h-40">
@@ -668,9 +704,13 @@ function ReservationsContent() {
           onClose={() => {
             setIsQRModalOpen(false);
             setQrCodeUri(null);
+            setQrCodeInfo(null);
           }}
           qrCodeUri={qrCodeUri}
           loading={qrCodeLoading}
+          time={qrCodeInfo?.time}
+          court={qrCodeInfo?.court}
+          date={qrCodeInfo?.date}
         />
 
         <SelectedBookingModal
